@@ -1,0 +1,17 @@
+
+ macros.coffee
+
+ This is currently just a proof-of-concept/prototype of macros in CoffeeScript.
+
+ A real readme is coming.
+
+ For now:
+
+   - There's an html REPL that loads the .coffee with xhr, and a dumb webrick file to serve it with.
+     I use it to fiddle around in and make sure that the node stuff I added doesn't break browser
+     compatability.
+
+   - At the end of macros.coffee there's a few lines to let it be used from node. If you call it
+     with a list of coffee files it'll compile them with macro support.
+
+   - The code is full of line noise ATM. ;) 
