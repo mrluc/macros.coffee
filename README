@@ -1,9 +1,9 @@
 
  macros.coffee
 
- This is currently just a proof-of-concept/prototype of macros in CoffeeScript.
+ This is a proof-of-concept/prototype of macros in CoffeeScript I wrote to teach myself the language.
 
- A real readme is coming.
+ A real readme is coming, along with comments, documentation ... 
 
  For now:
 
