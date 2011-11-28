@@ -7,6 +7,13 @@
 
  For now:
 
+   - macros.coffee
+     contains the implementation
+
+   - lib/core_macros.coffee
+     contains the quote macro, which you'll want (probably) and the Current Callback 
+     macro, which is all line noise and is proof-of-concept for sync-> async.
+
    - There's an html REPL that loads the .coffee with xhr, and a dumb webrick file to serve it with.
      I use it to fiddle around in and make sure that the node stuff I added doesn't break browser
      compatability.
