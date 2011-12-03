@@ -1,3 +1,8 @@
+
+# **macros.coffee** is a 100-line prototype of Lisp-style macros in CoffeeScript.
+#
+#
+
 if window? then [root,_] = [window, window._] #probably error w/o underscore.js toplev.
 else [(root = this).CoffeeScript,_] = [require('coffee-script'),require('underscore')]
 G_COUNT = 0 # Gensym Counter
