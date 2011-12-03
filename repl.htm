@@ -71,6 +71,7 @@ window.grab = (url, cb) ->
     cb( if xhr.status in [0, 200] then xhr.responseText else throw "failed: #{url}" ) if xhr.readyState is 4
   xhr.send null
 w_mac_code = (code)-> # macro code, incoming!
+  console.log code
   macs = new Macro ' '
   repl = new Repl ((s)-> macs.compile(s)), $
   require p: repl.p, Macros: macs
@@ -88,6 +89,7 @@ if singlefile
   w_mac_code code=$('#macros')[0].innerHTML
 else
   CoffeeScript.load "macros.coffee", ->
+    console.log Macro
     CoffeeScript.load "examples/repl.coffee", ->
       grab "lib/core_macros.coffee", (str) ->
         w_mac_code str

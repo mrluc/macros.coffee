@@ -1,25 +1,47 @@
 
 # **macros.coffee** is a 100-line prototype of Lisp-style macros in CoffeeScript.
 #
+#### Why CoffeeScript?
 #
+# CoffeeScript has a very clean [AST](http://en.wikipedia.org/wiki/Abstract_Syntax_Tree).
+# You can get at the AST in [Ruby](http://parsetree.rubyforge.org/) and
+# [Python](http://norvig.com/python-lisp.html) pretty easily, but CoffeeScript is a small
+# language that only compiles down to Javascript, not a VM. It's pretty easy to work with.
+#
+# Plus, CoffeeScript has a really flexible syntax, which you need for macros to make sense.
+#
+#### How This Code Is Organized
+#
+# It's in two parts: a class, and a bunch of functions it uses.
 
-if window? then [root,_] = [window, window._] #probably error w/o underscore.js toplev.
+# We're dependent on Underscore.js for its type recognition and shallow copy,
+# and CoffeeScript for CoffeeScript, in both the browser ...
+if window? then [root,_] = [window, window._]
+# ... and in a CommonJS environment.
 else [(root = this).CoffeeScript,_] = [require('coffee-script'),require('underscore')]
-G_COUNT = 0 # Gensym Counter
-utils =
-  arguments: undefined # monkeypatches browser weirdness.
+G_COUNT = 0 # Gensym Counter0]
+
+#### Utility Functions
+#
+# We need a whole library of functions to make transforming the AST easier. But that
+# library should be written with Macros, because that's what they're for.
+#
+# This is just a container for the functions that the implementation uses to
+# mangle the AST just enough to get us macros.
+#
+Utils =
+  arguments: undefined  # monkeypatches weirdness in some browsers.
+
   CS: root.CoffeeScript
+
   require2: (o,eso=root)->eso[name] = thing for name, thing of o
-  keys:   (o)-> k for own k of o
-  isValue:(o)-> _.isNumber(o) or _.isString(o) or _.isBoolean(o) or _.isRegExp(o) or _.isDate(o)
-  gensym: (s)-> "#{s ? s or ''}_g#{++G_COUNT}"
-  deepcopy: (o)-> # naive deepcopy by recursively shallow-cp w/_.clone. Dies on circles.
-    throw "No underscore?!?" unless _ and _.clone
-    for k,v of (o2=_.clone o)
-      if ( _.isArray(v) or typeof(v) == 'object') and !(isValue(v) or _.isFunction(v))
-        try (o2[k] = deepcopy v if keys(v).length > 0) catch e then p [e, v], 'err'
-    o2
-  propmost: (n,k='first')-> if n[k]? and n[k][k]? then propmost(n[k], k) else n
+
+  keys:     (o)-> k for own k of o
+
+  isValue:  (o)-> _.isNumber(o) or _.isString(o) or _.isBoolean(o) or _.isRegExp(o) or _.isDate(o)
+
+  # This walks the nodes of the AST.
+  # It started life as the David Padbury's `replacingWalk`
   nodewalk: (node, visitor, parent=undefined) => # from d.padbury's replacingWalk.
     return unless node.children
     parent = node if node.expressions   # TODO: parent if: 1. toplevel, or 2. is a fn.body
@@ -31,6 +53,21 @@ utils =
       else
         visitor child, ((newval) -> child = node[name] = newval), parent
         nodewalk child, visitor, parent
+
+  # Generated symbols. There are no symbols in Java/CoffeeScript, but we still need
+  # gnerated variables. These aren't guaranteed unique, but if you don't normally
+  # add `_g207` to your variable names it'll work for our macros.
+  gensym: (s)-> "#{s ? s or ''}_g#{++G_COUNT}"
+
+
+  deepcopy: (o)-> # naive deepcopy by recursively shallow-cp w/_.clone. Dies on circles.
+    throw "No underscore?!?" unless _ and _.clone
+    for k,v of (o2=_.clone o)
+      if ( _.isArray(v) or typeof(v) == 'object') and !(isValue(v) or _.isFunction(v))
+        try (o2[k] = deepcopy v if keys(v).length > 0) catch e then p [e, v], 'err'
+    o2
+  propmost: (n,k='first')-> if n[k]? and n[k][k]? then propmost(n[k], k) else n
+
   bq: (args, nodes) -> backquote args, nodes
   val2node: (v)->if is_node(v) then v else CS.nodes "#{v}"
   backquote: (vs,ns) ->
@@ -62,10 +99,14 @@ utils =
   variable:                (n)-> n?.variable
   is_node:                 (n)-> n?.isStatement? or n?.compile?
 
+#### Global Macro Object
 # An instance of Macro will behave like the CoffeeScript object,
-#  with .nodes, .compile, .run, but supporting macros.
+#  with `.nodes`, `.compile`, `.run`, but supporting macros.
 class Macro
-  eval("#{k} = utils['#{k}']") for own k of utils
+
+  # One last, rebellious, anti-pattern creation of context.
+  # a quick monkey-include to pull those functions into scope.
+  eval("#{k} = Utils['#{k}']") for own k of Utils
   compile_lint = (n)-> n.compile(bare:on).replace(/undefined/g,"")
   constructor: (str=' ',@macs={}, @macnodes={})-> @nodes str
 
@@ -107,6 +148,13 @@ if process? && (ns = process?.argv).length > 2 and ns = ns[2..ns.length] #1st 2 
       p "#{out}"
       fs.writeFile dir, out, (err)-> if err then throw err else p "Success!"
 
-utils.require2({Macro: Macro}) if window?
+#(new Utils).require2({Macro: Macro}) if window?
+_.extend window, {Macro: Macro} if window?
 exports.Macro = Macro if exports?
 exports[k] = v for k, v in utils if exports?
+
+# Big shoutout to David Padbury for getting HackerNews thinking about this
+# stuff with his # [original blog post] http://blog.davidpadbury.com/2010/12/09/making-macros-in-coffeescript/
+#
+# His macros were basically substitution-style macros, not functions that allowed
+# arbitrary transformations on the AST, but he used the AST to do them.
