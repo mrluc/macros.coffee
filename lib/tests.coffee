@@ -1,9 +1,9 @@
 p = if window? then window.p ? alert else console.log
-tests = 
+tests =
   "2+2 is 4": -> 2+2 is 4
   "Macros exists":-> Macros?
   "@macs exists": -> Macros.macs?
-  "Quote macro returns a node:":->
+  "Quote macro returns a node":->
     (quote -> x)?.expressions?
 
 exports = window if window?
