@@ -3,13 +3,13 @@
 #
 #### Why CoffeeScript?
 #
-# CoffeeScript is a small language that only compiles down to Javascript,
+# 1. CoffeeScript is a small language that only compiles down to Javascript,
 # not a VM, so its AST is pretty easy to work with.
 #
-# Plus, CoffeeScript has a really flexible syntax, which you need for macros to
+# 2. Plus, CoffeeScript has a really flexible syntax, which you need for macros to
 # look like anything.
 #
-# Too, JavaScript's metaprogramming is largely limited to tricks with `this`,
+# 3. Too, JavaScript's metaprogramming is largely limited to tricks with `this`,
 # so the abilities macros offer are correspondingly more attractive.
 #
 #### How This Code Is Organized
@@ -18,10 +18,11 @@
 #
 # The class `Macros` acts like the CoffeeScript
 # object; it relies on a number of supporting functions for AST
-# trickery.
+# trickery. It doesn't do anything to CoffeeScript's lexer/parser,
+# or use CoffeeScript internals.
 #
 # Also, it's written kind of densely ... a little code-golfed, to be honest.
-# I'm sorry -- but 100 lines is a nice, round number.
+# I'm sorry -- 100 lines sounds like a nice, round number.
 
 # We use Underscore.js for type recognition and shallow copy. In browser ...
 if window? then [ root, _ ] = [ window, window._ ]
@@ -39,8 +40,12 @@ G_COUNT = 0 # Gensym Counter
 # mangle the AST *just* enough to get us macros.
 #
 Utils =
-  # `nodewalk`  walks the nodes of the AST.
-  # It started life as the David Padbury's `replacingWalk`,
+  # **nodewalk**  walks the nodes of the AST. `nodewalk node, (n,set)-> set CS.nodes 2`
+  # replaces every node encountered with a 2. Which means that the whole node tree
+  # would get replaced with a 2, as once the root node turns into a 2, there are no
+  # children to walk.
+  #
+  # `nodewalk` started life as the David Padbury's `replacingWalk`,
   # and is the workhorse behind macroexpansion and backquotes.
   nodewalk: (node, visitor, parent=undefined) => # from d.padbury's replacingWalk.
     return unless node.children
@@ -54,22 +59,21 @@ Utils =
         visitor child, ((newval) -> child = node[name] = newval), parent
         nodewalk child, visitor, parent
 
-  # To `quote` a tree of source code for use as a template,
+  # **deepcopy** is important for macros. To `quote` a tree of source code for use as a template,
   # you need to deep copy it, or you'll get hilarious shared-structure bugs.
-  # This is a naive Deep-copy for ASTs that recursively shallow-copies with `_.clone`.
-  # It's not robust, doesn't handle circular objects, only
-  # the kind of 'tree of values' that makes up an AST.
+  # This is a naive implementation that recursively shallow-copies with `_.clone`.
+  # It's doesn't handle circular objects, just the kind of 'tree of values' that makes up an AST.
   deepcopy: (o)->
     throw "No underscore?!?" unless _ and _.clone
     for k,v of (o2=_.clone o)
-      if ( _.isArray(v) or typeof(v) == 'object') and !(isValue(v) or _.isFunction(v))
+      if ( _.isArray(v) or typeof(v) == 'object') and !(is_value(v) or _.isFunction(v))
         try (o2[k] = deepcopy v if keys(v).length > 0) catch e then console.log [e, v]
     o2
 
-  # We use Underscore.js to detect types.
-  isValue:  (o)-> _.isNumber(o) or _.isString(o) or _.isBoolean(o) or _.isRegExp(o) or _.isDate(o)
+  # **is_value** is used by deepcopy, and delegates to Underscore.js to detect types.
+  is_value:  (o)-> _.isNumber(o) or _.isString(o) or _.isBoolean(o) or _.isRegExp(o) or _.isDate(o)
 
-  # **Backquote** is the workhorse behind the return value of most macros.
+  # **backquote** is the workhorse behind the return value of most macros.
   # Given a hash of `v`alue`s` and a(n AST)ree of `n`ode`s`, like so:
   #
   #     backquote { my_var: 3, my_other_var: quote -> 2+2 }, quote ->
@@ -102,13 +106,15 @@ Utils =
   # add `_g207` to your variable names it'll work for our macros.
   gensym: (s)-> "#{s ? s or ''}_g#{++G_COUNT}"
 
-  # **argschain** is a helper for down-and-dirty DSLs that may want to pattern-match
-  # on a sequence of symbols. Given the AST for : `a b c d, e b g (100) 123`,
-  # `argschain` returns the nodes in an array like `[a,b,c,[d,e],b,g,(100),123]`.
+  # **argschain** is a helper for down-and-dirty DSL macros that may
+  # want to abuse function-call syntax.
   #
   # In CoffeeScript, like Ruby and other languages,
-  # `a b c d` means `a( b( c( d() or d)))`. That nesting can be a pain; in Lisp,
-  # sequences have the same syntax as function calls, which makes things easier.
+  # `a b c d` means `a(b(c(d)))`. That nesting can be a pain; in Lisp,
+  # sequences have the same syntax as function calls, so it's a non-issue.
+  # `argschain quote -> a b c d, e b g (100) 123` returns nodes in an
+  # array, like `[a,b,c,[d,e],b,g,(100),123]`
+  #
   argschain: (n,acc=[]) ->
     acc.push n if acc.length == 0
     if n.args?.length
@@ -116,9 +122,8 @@ Utils =
       argschain( n.args[n.args.length-1], acc )
     else acc
 
-  # Some utilities for checking properties of nodes, just to save typing.
-  #
-  # Mostly copy-pasted from the Repl.
+  # Some shortcuts for checking properties of nodes,
+  # mostly copy-pasted from the Repl.
   n_index: (node, p) -> # index of node in expressions array of parent/undefined.
     (return i if n.contains? && n.contains((nu)->nu is node)) for n,i in p.expressions
     undefined
@@ -126,10 +131,11 @@ Utils =
   n_is_in:                 (n,parent) -> parent.contains (k) -> k is n
   n_is_last:               (n,parent)->  n_last(parent) is n
   # We use this to wrap up a chained check into some of the common places
-  # that a node might store its 'name', the characters we actually see in the source code.
+  # that a node might store its 'name' -- a name, a value, or a value wrapped in a block.
   get_name:                (n)-> node_name(n) ? values(n) ? simple_expression_value(n)
   simple_expression_value: (n)-> n?.variable?.base?.body?.expressions[0]?.base?.value
   strip_expression:        (n)-> if n.expressions?[0]? then n.expressions[0] else n
+  # This is the one we use to identify macro names.
   node_name:               (n)-> n?.variable?.base?.value
   values:                  (n)-> n?.base?.value
   variable:                (n)-> n?.variable
@@ -144,31 +150,38 @@ Utils =
 # An instance of Macro will behave like the CoffeeScript object,
 #  with `.nodes`, `.compile`, `.run`.
 #
-# But it supports macros, whose compiled definitions it stores in `.macs`,
-# and whose nodes it caches in `.macnodes` during macroexpansion.
+#### API
 #
-# Calling `nodes`, `compile`, or `run` will invoke macroexpansion.
+# `compile` and `run` result in complete macroexpansion and compilation
+# of the code string passed in.
+#
+# `nodes`, `macex`, and `ex1` results in differing levels of macroexpansion,
+# if you want to gander at the AST more closely -- use `nodes` to see
+# it after macro *definitions* have been expanded, and `macex` to see
+# it after more complete macroexpansion. Or perform a single, targetted
+# expansion with `ex1`.
+#
 class Macro
 
-  #### Setup and Constructor
+  #### Setup &amp; Constructor
 
   # Monkey-include those functions, above, into scope.
   eval("#{k} = Utils['#{k}']") for own k of Utils
 
-  # If anyone knows why `undefined` shows up, necessitating this
-  # cleanup, I'd appreciate knowing. :p I thought it was related to indentation
-  # settings in the AST that I was somehow messing up.
+  # Cleanup; `undefined` shows up in indented code;
+  # we're apparently nuking indent info somewhere. TODO.
   compile_lint = (n)-> n.compile(bare:on).replace(/undefined/g,"")
 
   # Pass a string of code to the constructor, and it gets sent
-  # right to `.nodes` -- where we get very busy.
-  #
-  # `nodes` is probably the most important function in the implementation.
+  # right to `.nodes`. `nodes` is probably the most important
+  # function in the implementation.
   constructor: (str=' ',@macs={}, @macnodes={})-> @nodes str
 
-  # **nodes** turns the input string into an AST via the CoffeeScript
-  # object, but with two crucial additions: it finds and saves
-  # macro definitions, and then macroexpands and compiles
+  #### Implementation
+
+  # **nodes** calls
+  # `CoffeeScript.nodes`, but then does two other things: it *finds and saves*
+  # macro definitions, and then *macroexpands and compiles*
   # them for later use.
 
   nodes: (str)=>
@@ -182,59 +195,56 @@ class Macro
         @macnodes[ name = node_name(n.args[0]) ] = n.args[0].args[0]
         set CS.nodes("/* mac '#{name}' defined  */")
 
-    # Next, if the macros aren't all compiled, it
-    # loops through the macro definitions, expanding them.
-    #
-    # The order is important, because macros often use *other* macros!
+    # Next, it loops through uncompiled macro definitions, expanding and compiling.
+    # This must be done in the right order; macros often use *other* macros!
     # So for each of the macro definitions that's not compiled yet,
     until keys(@macnodes).length <= keys(@macs).length
       for k, v of @macnodes when is_node(v) and !@macs[k] and doit=on
-        # if the definition doesn't call an **uncompiled** macro,
+        # if the definition *doesn't* call an *uncompiled* macro,
         nodewalk v,(n)=>doit=no if (s=node_name(n)) && @macnodes[s]? && !@macs[s]?
-        # then macroexpansion will work! So we expand that node by calling
-        # `@macex()`, and evaluate the compiled macro and save the resulting
-        # function into @macs.
+        # then macroexpansion will work! Expand,
+        # compile and evaluate the definition, and save
+        # the result in `@macs` under the macro name.
         @macex(v) and @macs[k] = eval "(#{compile_lint v})" if doit
     @input
 
-  # **compile**, like CoffeeScript's compile, outputs javascript.
-  compile: (s)=>
-    # It calls `nodes`, which takes care of any macro *definitions* it
-    # may contain,
-    @nodes(s) if s
-    # And then it performs macroexpansion on the AST, via `macex`
-    @macex() until @macex_done()
-    # And spits out javascript.
-    compile_lint @input
 
-  # **macex** is probably the second-most important function in
-  # the implementation. Given nodes, it performs macroexpansion on them,
-  # actually *applying* those macro definitions that `nodes` saved into
-  # `@macs`.
+  # **macex** expands *all* macro calls, not just those in macro definitions.
+  # Given nodes, it looks for a call against a function with
+  # a macro's name. It sends those nodes to be processed by the associated
+  # macro, performing a single macroexpansion via `ex1`.
   macex: (ns=@input) =>
-    # It walks the tree, and if it finds a function call against a function
-    # with a macro's name, it sends that node to be processed by the associated
-    # macro, performing a single macroexpansion via `ex1`.
     nodewalk ns,((n,set,p)=>set @ex1 s,n,p if (s=node_name n) && @macs[s]?), ns
 
   # **ex1** perform a single macroexpansion. Given a macro name, a node, and its parent,
   # call the macro stored with that name, passing the node and the node whose
   # `expressions` array contains it.
-  ex1:   (macro, node, p) => @macs[macro](node, p)
+  ex1: (macro, node, p) => @macs[macro](node, p)
 
-  # The order of expansion should ensure that `macex` need only be run once.
+  # The order of expansion means `macex` need only be run once. Probably.
   # But just in case, **macex_done** can be used to test whether or not a code tree
   # contains un-expanded macro calls.
   macex_done: (nodes=@input, done=yes)=>
     nodewalk nodes, (n)=> done=no if (s=node_name n) && s of @macs
     done
-  # Like the CoffeeScript object, `run` uses `eval` to execute code immediately.
+
+  # **compile**, like CoffeeScript's compile, outputs javascript.
+  # It calls `nodes`, which takes care of any macro *definitions* it
+  # may contain, performs macroexpansion on the AST via `macex`,
+  # and spits out compiled javascript.
+  compile: (s)=>
+    @nodes(s) if s
+    @macex() until @macex_done()
+    compile_lint @input
+
+  # Like the CoffeeScript object, `run` uses `eval` to
+  # execute `compile`d code immediately.
   run: (s)=> eval( if s? then @compile(s) else @compile() )
 
 
 
-#### Using From Node.js
-#
+## Using From Node.js
+
 # In a Node.js environment, this file functions as a
 # basic preprocessor. Call it like this:
 #
@@ -270,8 +280,7 @@ exports[k] = v for k, v in Utils if exports?
 
 
 
-
-#### Macros in Other Languages
+## Macros in Other Languages
 #
 # CoffeeScript has a very clean [AST](http://en.wikipedia.org/wiki/Abstract_Syntax_Tree).
 #
@@ -298,9 +307,9 @@ exports[k] = v for k, v in Utils if exports?
 # stuff with his
 # [original blog post](http://blog.davidpadbury.com/2010/12/09/making-macros-in-coffeescript/)
 #
-# His macros were C-style, substitution-based macros, not functions that allowed
-# arbitrary transformations on the AST -- which he realized; he just
-# wanted to get people thinking! -- but he used the
+# Those were were C-style, substitution-based macros, not functions that allowed
+# arbitrary transformations on the AST -- but he used
 # AST to do them, and it was probably a repost on Hacker News
 # that got me wondering if real Lisp-style macros were a possibility.
+#
 #
