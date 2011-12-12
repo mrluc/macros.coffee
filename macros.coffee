@@ -24,12 +24,11 @@
 # Also, it's written kind of densely ... a little code-golfed, to be honest.
 # I'm sorry -- 100 lines sounds like a nice, round number.
 
-# We use Underscore.js for type recognition and shallow copy. In browser ...
-if window? then [ root, _ ] = [ window, window._ ]
-# ... or node.js
-else [ (root = this).CoffeeScript, _ ] = [ require('coffee-script'), require('underscore') ]
-
-G_COUNT = 0 # Gensym Counter
+# We use Underscore.js for type recognition and shallow copy, in browser or node.js
+[CS, _, G_COUNT] = if window?
+                     [CoffeeScript, window._, 0]
+                   else
+                     [require('coffee-script'), require('underscore'), 0]
 
 ## Utility Functions
 #
@@ -141,12 +140,12 @@ Utils =
   variable:                (n)-> n?.variable
   is_node:                 (n)-> n?.isStatement? or n?.compile?
   arguments: undefined # Monkeypatch weirdness in some browsers,
-  CS:        root.CoffeeScript # alias the CoffeeScript object,
   keys:      (o)-> k for own k of o
   propmost: (n,k='first')-> if n[k]? and n[k][k]? then propmost(n[k], k) else n
 
 
 ## Macro Object
+
 # An instance of Macro will behave like the CoffeeScript object,
 #  with `.nodes`, `.compile`, `.run`.
 #
@@ -165,8 +164,8 @@ class Macro
 
   #### Setup &amp; Constructor
 
-  # Monkey-include those functions, above, into scope.
-  eval("#{k} = Utils['#{k}']") for own k of Utils
+  # Monkey-include Utils functions directly into lexical scope.
+  eval("#{k} = Utils['#{k}'];") for own k of Utils
 
   # Cleanup; `undefined` shows up in indented code;
   # we're apparently nuking indent info somewhere. TODO.
