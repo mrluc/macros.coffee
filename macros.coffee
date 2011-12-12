@@ -31,7 +31,7 @@
                      [require('coffee-script'), require('underscore'), 0]
 
 ## Utility Functions
-#
+
 # We need a whole library of functions to make transforming the AST easier. This
 # isn't that library; it'd be easier to write them once we have macros, anyhow.
 #
@@ -42,7 +42,7 @@ Utils =
   # **nodewalk**  walks the nodes of the AST. `nodewalk node, (n,set)-> set CS.nodes 2`
   # replaces every node encountered with a 2. Which means that the whole node tree
   # would get replaced with a 2, as once the root node turns into a 2, there are no
-  # children to walk.
+  # children to walk. Use these powers wisely, grasshopper.
   #
   # `nodewalk` started life as the David Padbury's `replacingWalk`,
   # and is the workhorse behind macroexpansion and backquotes.
