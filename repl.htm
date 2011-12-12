@@ -1,0 +1,102 @@
+<html>
+<head>
+<style type="text/css">
+  body { font-family: "Arial", "Helvetica New" }
+  .wide { width: 100%;  overflow-x: auto }  .round {border-radius: 8px;}
+  .lightfont {font-face: bold; font-size:21px;color:white; text-shadow: #eee 0 1px 1px; }
+  canvas { border: 0px solid black; } 
+  .gray {background-color: #333; }
+  .dark { border: 0px solid black; background-color: #222; color: white; }
+  .dark .entry {color: white; } .dark .eval {color:white}  .dark .err {color: #EE6644;}
+  .dark .out {color: #EE4466;}
+  #history { font-family: "Consolas", "Courier New"; overflow-y: overlay; height: 150px; font-size: 12px;}
+  textarea { font-family: "Consolas", "Courier New"; display: block; width:85%;}
+  .repl{padding:0px; margin:0px; white-space:pre-wrap} .err{ color: red; } .js { color: #44AA44; } 
+  .eval { color: black; font-weight: bold; }
+  .tight {margin: 0px; padding: 0px;}
+  .h100 { height: 140px; } .w100 {width:10%; margin:8px; min-width:70px;
+    border:0px;
+    vertical-align: bottom;
+  } 
+  .top { vertical-align: top; }  .right { float: right; }
+  .button {
+    position:relative;
+    /*z-index: 1000;*/
+    background-color: #33EE33;
+    background: -webkit-gradient(linear, left top, left bottom, from(rgba(150, 200, 150, 255)), to(rgba(100, 255, 100, 0)));
+    background: -moz-linear-gradient(top, rgba(150, 200, 150, 255), rgba(100, 255, 100, 0));
+    font-face: bold; font-size:21px;color:white; text-shadow: #eee 0 1px 1px;
+     -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.2); -webkit-box-shadow: 1px 1px 2px rgba(0,0,0,0.2); -moz-box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .entry, .entry:focus { font-size: 14px; border:0px; outline: none; float:left; padding-left:8px;}
+</style>
+<script src="examples/jquery-1.4.2.js"></script>
+<script src="examples/underscore.js"></script>
+</head>
+<body class="dark" width="100%">
+
+<h1 class='lightfont'>macros in coffeescript</h1>
+<div id='repl_pane' class='dark tight'>
+  <div class='gray wide round'>
+  <textarea class="entry gray tight h100" id="repl">
+o = {a:1, b: {a:1, b: {a:1}}}
+a = [0..10]
+p "Hello, World" for n in a</textarea>
+  <input id="eval_button" class="button round tight h100 w100 top right" type="submit" value="EVAL"/>
+  </div>
+  <div id="history" style="overflow-y: overlay; min-height: 20px; height: 500px;"></div>
+</div>
+<div id='info_pane' class=''>.</div>
+</script><script id="code" type="text/macroscript">
+#// to do all development in this file, without serving
+#// files on localhost for XHR, 
+#// 1) copy the latest version of files 
+#//    directly into these script blocks,
+#// 2) Set the variable "singlefile = on",
+#//    in text/coffeescript block at bottom of file.
+# macros.coffee, examples/repl.coffee
+</script>
+<script id='macros' type='text/macroscript'>
+# lib/core_macros.coffee 
+</script>
+<script type='text/coffeescript'>
+#// REPL: 
+singlefile=off
+window.grab = (url, cb) ->
+  xhr = new (window.ActiveXObject or XMLHttpRequest)('Microsoft.XMLHTTP')
+  xhr.open 'GET', url, true
+  xhr.overrideMimeType 'text/plain' if 'overrideMimeType' of xhr
+  xhr.onreadystatechange = ->
+    cb( if xhr.status in [0, 200] then xhr.responseText else throw "failed: #{url}" ) if xhr.readyState is 4
+  xhr.send null
+w_mac_code = (code)-> # macro code, incoming!
+  console.log code
+  macs = new Macro ' '
+  repl = new Repl ((s)-> macs.compile(s)), $
+  require p: repl.p, Macros: macs
+  p code
+  p "Welcome to the mr_luc's CoffeeScript Shell"
+  repl.do_eval code
+  grab "lib/tests.coffee", (str)-> 
+    p macs.run str
+    #p s=macs.compile(str)
+    #eval s
+    #throw "tests lib err" unless runtests?
+    runtests()
+if singlefile
+  CoffeeScript.run $('#code')[0].innerHTML
+  w_mac_code code=$('#macros')[0].innerHTML
+else
+  CoffeeScript.load "macros.coffee", ->
+    console.log Macro
+    CoffeeScript.load "examples/repl.coffee", ->
+      grab "lib/core_macros.coffee", (str) ->
+        w_mac_code str
+
+</script>
+
+<script src="examples/coffee-script.js"></script>
+</body>
+
+</html>

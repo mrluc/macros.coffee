@@ -1,0 +1,28 @@
+
+ macros.coffee
+
+ This is a down-and-dirty, 100-line proof-of-concept/prototype of macros in CoffeeScript I wrote to teach myself the language.
+
+ A real readme is coming, along with comments, documentation ... 
+
+ There are a couple of articles written with more detail. For now you can find them at:
+ 
+   http://thr0.com:8080/
+
+ For now:
+
+   - macros.coffee
+     contains the implementation
+
+   - lib/core_macros.coffee
+     contains the quote macro, which you'll want (probably) and the Current Callback 
+     macro, which is all line noise and is proof-of-concept for sync-> async.
+
+   - There's an html REPL that loads the .coffee with xhr, and a dumb webrick file to serve it with.
+     I use it to fiddle around in and make sure that the node stuff I added doesn't break browser
+     compatability.
+
+   - At the end of macros.coffee there's a few lines to let it be used from node. If you call it
+     with a list of coffee files it'll compile them with macro support.
+
+   - The code is full of line noise ATM. ;) 
