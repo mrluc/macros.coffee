@@ -37,9 +37,9 @@ tests =
     p 'so, it works -- but I bet he no recognize u bro'
     p MS.macros.two.recognize usage
     p 'or -- i bet the thinks you are expanded if we use CS.nodes directly'
-    p MS.is_expanded usage_nodes #aha!
+    p MS.all_expanded usage_nodes #aha!
     p 'but not when we cherry-pick the expression. well, what IS getting passed in is_exp? '
-    p MS.is_expanded usage
+    p MS.all_expanded usage
     p "yayno?"
     p MS.compile usage_text
 

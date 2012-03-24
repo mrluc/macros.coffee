@@ -5,7 +5,6 @@ class MacroScript
   [G_COUNT, p, root] = [0, console.log, window ? process]
   gensym = (s)-> "#{s ? s or ''}_g#{++G_COUNT}"
 
-  # todo: deepcopy
   nodewalk = (n, visit, dad=undefined) ->
     return unless n.children
     dad = n if n.expressions
@@ -24,11 +23,10 @@ class MacroScript
       return yes if fn o
     no
 
-  keys = (o)-> k for own k of o
   deepcopy = (o)->
     for k,v of o2 = _.clone o
-      if ( _.isArray(v) or typeof(v) == 'object') and !isValue(o)
-        o2[k] = deepcopy v if keys(o).length > 0
+      if ( _.isArray(v) or typeof(v)=='object') && !isValue(o) &&_.keys(o).length > 0
+        o2[k] = deepcopy v
     o2
 
   node_name = (n)-> n?.variable?.base?.value
@@ -46,12 +44,14 @@ class MacroScript
           recognize: (n)->  name if name is recognize n
           compiled: undefined
         set CS.nodes "`//#{name} defined`"
+
     until @all_compiled()
       for name, {nodes, compiled} of @macros when not compiled
         if @calls_only_compiled nodes
           js = @compile_lint @macroexpand nodes
           @macros[name].compiled = eval "(#{js})"
-    @macroexpand() until @is_expanded()
+
+    @macroexpand() until @all_expanded()
 
   macroexpand: (ns=@ast)=>
     #TODO: eventually need to respect the ordering established in @types
@@ -63,13 +63,15 @@ class MacroScript
     @nodes s if s
     @compile_lint @ast
 
+  eval: (s) => eval @compile s
+
   compile_lint: (n=@ast)-> n.compile(bare:on).replace(/undefined/g,"")
 
   all_compiled: =>
     return no for name, {compiled} of @macros when not compiled
     yes
 
-  is_expanded: (ast=@ast, iz = yes) =>
+  all_expanded: (ast=@ast, iz = yes) =>
     return no for k, {recognize} of @macros when recognize @ast
     nodewalk ast, (n) =>
       iz = no for name, {recognize} of @macros when recognize n
@@ -80,5 +82,16 @@ class MacroScript
       does = no for name, {compiled, recognize} of @macros when !compiled and recognize n
     does
 
+if process? && (args = process?.argv).length > 2 and ns = args[2..args.length]
+  [fs, path] = (require(s) for s in ['fs','path'])
+  [p, MS]    = [console.log, new MacroScript]
+  for src in ns
+    p src
+    fs.readFile src, "utf-8", (err, code) ->
+      throw err if err
+      name = path.basename src, path.extname(src)
+      dir  = path.join(path.dirname(src), "#{name}.js")
+      out  = MS.compile code
+      fs.writeFile dir, out, (err)-> if err then throw err else p "Success!"
 
 module.exports = new MacroScript
