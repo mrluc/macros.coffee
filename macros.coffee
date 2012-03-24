@@ -9,21 +9,9 @@
 # 2. Plus, CoffeeScript has a really flexible syntax, which you need for macros to
 # look like anything.
 #
-# 3. Too, JavaScript's metaprogramming is largely limited to tricks with `this`,
+# 3. Too, JavaScript's metaprogramming is largely limited to tricks with `this` (`@`)
 # so the abilities macros offer are correspondingly more attractive.
 #
-#### How This Code Is Organized
-#
-# It's one class, plus a bunch of supporting functions.
-#
-# The class `Macros` acts like the CoffeeScript
-# object; it relies on a number of supporting functions for AST
-# trickery. It doesn't do anything to CoffeeScript's lexer/parser,
-# or use CoffeeScript internals.
-#
-# Also, it's written kind of densely ... a little code-golfed, to be honest.
-# I'm sorry -- 100 lines sounds like a nice, round number.
-
 # We use Underscore.js for type recognition and shallow copy, in browser or node.js
 [CS, _, G_COUNT] = if window?
                      [CoffeeScript, window._, 0]
@@ -191,6 +179,25 @@ class Macro
     # and replaced with a comment in the output.
     nodewalk (@input = CS.nodes str), (n,set) =>
       if node_name(n) is 'mac'
+        #TODO TODO TODO: need for refactor here.
+        #
+        # 'mac' would just be one entry in the read table.
+        # it should be somehow associated with a recognizer that
+        # we use down below, where we also check for node_name.
+        # So we'd say
+        # 'if this node_name is one of the readtable names',
+        #  save it away under its name, but also save away what type of macro
+        #  it is! ('mac').
+        #
+        # For each type of syntax we want to recognize -- function call, dot notation, etc --
+        # we'd have:
+        #
+        # 1. name: 'mac'
+        # 2.  recognize: (node,parent)-> return name of recognized `mac` call, or
+        #
+        # That would be the readtable. Logic for using it seems inextricably linked
+        # to macros, so best to think of it as just a class var of Macro.
+
         @macnodes[ name = node_name(n.args[0]) ] = n.args[0].args[0]
         set CS.nodes("/* mac '#{name}' defined  */")
 
