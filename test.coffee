@@ -1,38 +1,63 @@
-[CS, _] = [require('coffee-script'), require('./examples/underscore')]
+[CS, _] = [require('coffee-script'), require('./examples/underscore')] #TODO npm _
 
-class MacroScript
+[G_COUNT, p, root] = [0, console.log, window ? process]
 
-  [G_COUNT, p, root] = [0, console.log, window ? process]
-  gensym = (s)-> "#{s ? s or ''}_g#{++G_COUNT}"
+exports.utils =
 
-  nodewalk = (n, visit, dad=undefined) ->
+  gensym: (s)-> "#{s ? s or ''}_g#{++G_COUNT}"
+
+  nodewalk:(n, visit, dad = undefined) ->
     return unless n.children
     dad = n if n.expressions
     for name in n.children
       return unless kid = n[name]
       if kid instanceof Array then while kid.length > ((++i if i?) ? i=0)
-        visit kid[i], ((newval) -> kid[i] = newval), dad
+        visit kid[i], ((node) -> kid[i] = node), dad
         nodewalk kid[i], visit, dad
       else
-        visit kid, ((newval)-> kid = n[name] = newval), dad
+        visit kid, ((node)-> kid = n[name] = node), dad
         nodewalk kid, visit, dad
     n
 
-  isValue = (o)->
-    for fn in [_.isNumber, _.isString, _.isBoolean, _.isRegExp, _.isDate, _.isFunction]
-      return yes if fn o
+  isNode: (o)-> o.isStatement? or o.compile?
+  isValue: (o)->
+    for k in 'Number String Boolean RegExp Date Function'.split(' ')
+      return yes if _["is#{k}"](o)
     no
 
-  deepcopy = (o)->
+  deepcopy: (o)->
     for k,v of o2 = _.clone o
       if ( _.isArray(v) or typeof(v)=='object') && !isValue(o) &&_.keys(o).length > 0
         o2[k] = deepcopy v
     o2
 
-  node_name = (n)-> n?.variable?.base?.value
+  # TODO: refactor this junk. special-casing not cool.
+  backquote: (vs,ns) ->
+    get_name = (n)-> node_name(n) ? n.base?.value
+    val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
+    nodewalk ns, (n,set)->
+      set val2node(vs[s]) if (s=get_name(n)) and vs[s]?
+      # for the rest, we need to special-case recognition and setting. Makes me sad.
+      (n.name.value = vs[ss]; set n)          if n.source? and (ss=n.name?.value)  and vs[ss]
+      (n.index.value = vs[ss]; set n)         if n.source? and (ss=n.index?.value) and vs[ss]
+    ns
+  BQ: (vs,ns)-> backquote vs,ns
 
-  constructor: (str=' ', @macros={}, @types=[name:'mac', recognize: node_name])->
-    @nodes str
+  node_name: (n)-> n?.variable?.base?.value
+
+class MacroScript
+
+  eval "#{k} = exports.utils['#{k}']" for own k of exports.utils
+
+  constructor: (@macros={}, @types=[name:'mac', recognize: node_name])->
+
+  eval: (s) => eval @compile s
+
+  compile: (s)=>
+    @nodes s if s
+    @compile_lint()
+
+  compile_lint: (n=@ast)-> n.compile(bare:on).replace(/undefined/g,"")
 
   nodes: (str)=>
     @ast = CS.nodes str
@@ -58,14 +83,6 @@ class MacroScript
     expander = (n, set, parent)=>
       set compiled(n, parent, @) for k, {recognize, compiled} of @macros when recognize n
     nodewalk ns, expander, ns
-
-  compile: (s)=>
-    @nodes s if s
-    @compile_lint @ast
-
-  eval: (s) => eval @compile s
-
-  compile_lint: (n=@ast)-> n.compile(bare:on).replace(/undefined/g,"")
 
   all_compiled: =>
     return no for name, {compiled} of @macros when not compiled
@@ -94,4 +111,5 @@ if process? && (args = process?.argv).length > 2 and ns = args[2..args.length]
       out  = MS.compile code
       fs.writeFile dir, out, (err)-> if err then throw err else p "Success!"
 
-module.exports = new MacroScript
+exports.MacroScript = MacroScript
+exports.instance = new MacroScript
