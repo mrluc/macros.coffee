@@ -1,11 +1,15 @@
-#
 # Quote -- use like: ast = quote -> code you want the AST of.
 #
 # Weep, lisp implementers. Where's your Cons now?!?
-mac quote ( {args: [{body}, soak...]} ) ->
+
+mac quote ({args: [{body}, soak...]}) ->
   key = gensym()
-  (root.quotes ?= {})[ key ] = body
-  CS.nodes "deepcopy root.quotes['#{ key }']"
+  (root.quotes ?= {})[key] = body
+  CS.nodes "deepcopy root.quotes['" + key + "']"
+
+mac Q (n, parent, Macros)->
+  quote -> gotta reference quote, just to be sure it gets compiled first, so tha
+  Macros.macros.quote.compiled n
 
 #mac quote ( n )->
 #  Macro.quotes ?= {}

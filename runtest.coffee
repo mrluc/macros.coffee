@@ -1,7 +1,15 @@
 CS = require 'coffee-script'
-MS = MacroScript = require('./test').instance
+MS = require('./macros.coffee').instance
 
 p = console.log
+t = (o)-> p MS.compile o
+
+p 'hey'
+
+require './lib/core_macros.coffee'
+
+p 'yo'
+t 'quote -> 33333333333'
 
 quote_macro = """
 mac quote ({args: [{body}, soak...]}, parent, macros) ->
@@ -17,14 +25,13 @@ quote_usage = "quote -> hey"
 
 #fex = (n)-> n.expressions[0]
 
-t = (o)-> p MS.compile o
 tests =
   defs: ->
 
     p 'creating new MacroScript...'
     t '2+2'
 
-    t quote_macro
+    #t quote_macro
 
   info: ->
     MS.compile "mac info (n, p, m) -> console.log m; CS.nodes '2'"
@@ -63,6 +70,25 @@ tests =
     t "mac loop_bq (n)-> BQ {a:'OOO', i:'ZZZ'}, Q -> a for a, i in [1,2,3,4]"
     t "loop_bq()"
 
+  macex_russian_dolls: ->
+    t "mac zzz (n)-> Q -> 'RUSSIAN DOLLS'"
+    t "mac zzy (n)-> Q -> zzz(); zzz()"
+    t """
+      mac zzx (n)-> Q ->
+        zzy()
+        zzy()
+      """
+    t "zzx()"
+
+  macro_defining_macros: ->
+    t """
+      mac make_fub (n)->
+        quote ->
+          mac fub (n)->
+            quote -> 'IT IS WORKING!'"""
+    t "make_fub()"
+    t "fub()"
+
   utils: ->
 
 
@@ -71,3 +97,5 @@ p "going to perform tests..."
 for name, test of tests
   p "------ #{ name }"
   test()
+
+#
