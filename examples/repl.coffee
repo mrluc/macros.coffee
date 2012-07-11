@@ -12,7 +12,7 @@ class Repl
 	rebind_events: ($=@$)->
 		$(@buttonId).click => @do_eval()
 		$(@replId).keydown (e) =>
-			if e.ctrlKey then switch e.which  #ctrlEnter-->eval, ctrlUp-->load history
+			if e.shiftKey then switch e.which  #ctrlEnter-->eval, ctrlUp-->load history
 				when 13 then @do_eval()
 				when 38 then $(@replId).val @hist[@hist.length - @histdepth++ - 1]
 	to_s: (o)=>
@@ -23,14 +23,14 @@ class Repl
 	p: (s,style=@style.out)=> @show_eval (@to_s s), style
 	show_eval: (val, t=@style.js) ->
 		(el=$(@histId)[0]).innerHTML=("<p class='repl #{t}'>#{val}</p>"+el.innerHTML)
-		no 
+		no
 	do_eval: (entered = $(@replId).val()) ->
-		try 
+		try
 			@hist.push entered
 			js = @compile entered
 			@show_eval( js, @style.js )
 			@show_eval( root.eval(js), @style.eval)
-		catch e 
+		catch e
 			@show_eval e, @style.err
 			throw e
 		@show_eval "<br/>"
