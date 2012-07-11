@@ -2,8 +2,8 @@
 [G_COUNT, p, root]  = [0, console.log, window ? global]
 [ fs, path, CS, _ ] = (require(s) for s in ['fs','path', 'coffee-script', './examples/underscore'])
 
-### Implementation
-class MacroScript
+# Implementation
+exports.MacroScript = class MacroScript
   # First, some supporting functions:
   #
   # `gensym` is used to generate unique names for variables in generated code.
