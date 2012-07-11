@@ -1,46 +1,36 @@
 CS = require 'coffee-script'
-macros = require './macros.coffee'
-MS = macros.instance
+MS = require './macros.coffee'
 
 p = console.log
 t = (o)-> p MS.compile o
 
-# okay, finally -- we've confirmed that this bug happens in all
-# versions of coffeescript, so we'll definitely have to figure
-# out why -- by tracing, maybe with verbose coffeescript in
-# chrome since it's such a good environment -- but certainly
-# trace the exact execution in both cases and figure out what
-# is different.
-p deepcopy.toString()
+# So we've traced that one bug down.
+# But now I think that the different 'eval'
+# contexts between node 0.7-pre and the
+# more modern versions is a problem.
+# eval, by default, happens in the global
+# context in the more recent nodes, but
+# not back in 0.7-pre ... so all of those 'global'
+# functions ... may now have to be instance
+# functions for good. :(
+# Hell. Just do that? Then they're available
+# uniformly, on ms.deepcopy for instance, and
+# passed into each macro ...
 
-obj_bug = ->
-  p '------------- okay, first the original'
-  n1 = CS.nodes("a:1")
-  n2 = deepcopy n1
-  o = bare: on
-  p n1.compile(o)
-  p '------------- and now the copy'
-  p n2.compile(o)
-
-obj_bug()
-process.exit()
-
-p 'hey'
-p nodewalk.toString()
 require './lib/core_macros.coffee'
 
 p 'yo'
 t 'quote -> 33333333333'
-
-quote_macro = """
-mac quote ({args: [{body}, soak...]}, parent, macros) ->
-  key = gensym()
-  (root.quotes ?= {})[key] = body
-  CS.nodes "deepcopy root.quotes['" + key + "']"
-mac Q (n,parent,MacroScriptInstance)->
-  quote -> gotta reference quote, just to be sure it gets compiled
-  MacroScriptInstance.macros.quote.compiled n
-"""
+process.exit()
+#quote_macro = """
+#mac quote ({args: [{body}, soak...]}, parent, macros) ->
+#  key = gensym()
+#  (root.quotes ?= {})[key] = body
+#  CS.nodes "deepcopy root.quotes['" + key + "']"
+#mac Q (n,parent,MacroScriptInstance)->
+#  quote -> gotta reference quote, just to be sure it gets compiled
+#  MacroScriptInstance.macros.quote.compiled n
+#"""
 
 quote_usage = "quote -> hey"
 
@@ -104,5 +94,5 @@ p "going to perform tests..."
 for name, test of tests
   p "------ #{ name }"
   test()
-
+p "yay done"
 #
