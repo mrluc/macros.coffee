@@ -2,6 +2,7 @@ CS = require 'coffee-script'
 MS = require './macros.coffee'
 
 p = console.log
+p MS
 t = (o)-> p MS.compile o
 
 # So we've traced that one bug down.

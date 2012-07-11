@@ -126,9 +126,8 @@ class MacroScript
 # or you can expand+compile files to Javascript and run that.
 
 # Simply `require 'module_using_macros'` should work,
-#exports = instance = new MacroScript
-exports.instance = instance = new MacroScript
-
+exports.tst = 2
+exports.instance = instance = new exports.MacroScript
 require.extensions['.coffee'] = (module, fname) ->
   module._compile instance.compile(fs.readFileSync(fname, 'utf-8')), fname
 
@@ -139,7 +138,8 @@ require.extensions['.coffee'] = (module, fname) ->
 # support specifying an output directory; the compiled javascript is
 # always written into the same location as the coffeescript.
 if process? && (args = process?.argv).length > 2 and ns = args[2..args.length]
-  MS = new MacroScript
+  console.log "called from command line"
+  MS = new exports.MacroScript
   for src in ns
     p src
     fs.readFile src, "utf-8", (err, code) ->
