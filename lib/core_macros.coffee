@@ -5,9 +5,6 @@
 mac quote ({args: [{body}]}, p, m) ->
   key = gensym()
   (root.quotes ?= {})[key] = body
-  # TODO: I just removed deepcopy. I'm not sure, but that might cause terrible problems.
-  #  I'm just having trouble remembering the rationale ... I remember that there were shared-
-  #  structure bugs, but in what kind of code?
   CS.nodes "deepcopy global.quotes['" + key + "']"
 
 mac Q (n, parent, Macros) ->
@@ -63,7 +60,8 @@ mac BQ (n) ->
     # so that on the second iteration, the name we're looking for will not be there.
   # So to recreate, need 2 things,
   quote ->
-    args = {a: 2, b:3}
+    args = {}
+    args.a = 2; args.b = 3
     backquote args, quote ->
       x=a
 
