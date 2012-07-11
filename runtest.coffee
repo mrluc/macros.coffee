@@ -3,7 +3,11 @@ MS = require './macros.coffee'
 
 p = console.log
 p MS
-t = (o)-> p MS.compile o
+t = (o)->
+  try
+    p MS.instance.compile o
+  catch e
+    p e
 
 # So we've traced that one bug down.
 # But now I think that the different 'eval'
@@ -22,7 +26,7 @@ require './lib/core_macros.coffee'
 
 p 'yo'
 t 'quote -> 33333333333'
-process.exit()
+#process.exit()
 #quote_macro = """
 #mac quote ({args: [{body}, soak...]}, parent, macros) ->
 #  key = gensym()
@@ -40,7 +44,7 @@ quote_usage = "quote -> hey"
 tests =
   defs: -> t '2+2'
   info: ->
-    MS.compile "mac info (n, p, m) -> console.log m; CS.nodes '2'"
+    MS.instance.compile "mac info (n, p, m) -> console.log m; CS.nodes '2'"
     t "info 2"
 
   quote: ->
@@ -77,6 +81,8 @@ tests =
     # TODO: aha, lines ending with ;; instead of ;. What's ast look like?
 
   macro_defining_macros: ->
+    # TODO: mac-generating-macros error out because of .length of undefined
+    # in Code.paramNames, referencing Param.names loop of name.objects.
     t """
       mac make_fub (n)->
         quote ->

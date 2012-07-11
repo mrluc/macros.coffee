@@ -89,6 +89,7 @@ exports.MacroScript = class MacroScript
         set CS.nodes "`//#{name} defined`"
     # Macros have to be compiled in the right order, because they
     # may themselves call other macros.
+    # todo: see about binding these in a better context than global :P
     until @all_compiled()
       for name, {nodes, compiled} of @macros when not compiled
         if @calls_only_compiled nodes
@@ -126,8 +127,7 @@ exports.MacroScript = class MacroScript
 # or you can expand+compile files to Javascript and run that.
 
 # Simply `require 'module_using_macros'` should work,
-exports.tst = 2
-exports.instance = instance = new exports.MacroScript
+exports.instance = instance = new MacroScript
 require.extensions['.coffee'] = (module, fname) ->
   module._compile instance.compile(fs.readFileSync(fname, 'utf-8')), fname
 
