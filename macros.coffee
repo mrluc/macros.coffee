@@ -1,9 +1,9 @@
-[G_COUNT, p, root]  = [0, console.log, window ? process]
+[G_COUNT, p, root]  = [0, console.log, window ? global]
 [ fs, path, CS, _ ] = (require(s) for s in ['fs','path', 'coffee-script', './examples/underscore'])
 
 exports.utils =
 
-  gensym: (s)-> "#{s ? s or ''}_g#{++G_COUNT}"
+  gensym: (s='')-> "#{s}_g#{++G_COUNT}"
 
   nodewalk:(n, visit, dad = undefined) ->
     return unless n.children
@@ -26,7 +26,7 @@ exports.utils =
 
   deepcopy: (o)->
     for k,v of o2 = _.clone o
-      if ( _.isArray(v) or typeof(v)=='object') && !isValue(o) && _.keys(o).length > 0
+      if _.isArray(v) or (typeof(v)=='object' && !isValue(o) && _.keys(o).length > 0)
         o2[k] = deepcopy v
     o2
 
@@ -40,10 +40,8 @@ exports.utils =
       n.name.value = vs[ss]          if n.source? and (ss=n.name?.value)  and vs[ss]
       n.index.value = vs[ss]         if n.source? and (ss=n.index?.value) and vs[ss]
     ns
-  BQ: (vs,ns)-> backquote vs,ns
 
   node_name: (n)-> n?.variable?.base?.value
-
 
 exports.MacroScript = class MacroScript
 
@@ -63,6 +61,7 @@ exports.MacroScript = class MacroScript
     @ast = CS.nodes str
     @find_and_compile_macros()
     @macroexpand() until @all_expanded() #because mac isn't a macro, we aren't catching.
+    @ast
 
   find_and_compile_macros: =>
     nodewalk @ast, (n,set) =>
@@ -77,6 +76,7 @@ exports.MacroScript = class MacroScript
       for name, {nodes, compiled} of @macros when not compiled
         if @calls_only_compiled nodes
           js = @compile_lint @macroexpand nodes
+          console.log js
           @macros[name].compiled = eval "(#{js})"
 
   macroexpand: (ns=@ast)=>
@@ -105,7 +105,7 @@ exports.MacroScript = class MacroScript
 exports.instance = global.Macros = instance = new MacroScript
 
 require.extensions['.coffee'] = (module, fname) ->
-  module._compile global.Macros.compile(fs.readFileSync(fname, 'utf-8')), fname
+  module._compile instance.compile(fs.readFileSync(fname, 'utf-8')), fname
 
 if process? && (args = process?.argv).length > 2 and ns = args[2..args.length]
   MS = new MacroScript
