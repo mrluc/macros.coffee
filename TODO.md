@@ -5,9 +5,14 @@ I've been down in South America ever since I presented the
 original proof-of-concept at Ruby.mn, and I didn't do much
 with it. But I found some time to refactor and cut line noise.
 
-But now things don't work that worked before. And I still 
-need to make this more like a 'real' project: 
-(readme, tests, npm-installable, in that order).
+But now old macros are broken. And no progress at all on 
+'project' stuff.
+
+Aside from fixes, priorities are probably:
+1. organize
+2. readme
+3. tests
+4. npm-installable
 
 In the process of cleaning the room, I've uncovered some 
 architectural flaws, and haven't had time to completely solve
@@ -44,7 +49,7 @@ them:
   been compiling all this time even with me stripping that info out
   with my naive deep copy.
 
-- cc, para, and other macros from my writeups. They don't work any more.
+- cc, para, and other macros from the original articles. They don't work any more.
 
 - Browser generally, ie, it loads and runs.
 
