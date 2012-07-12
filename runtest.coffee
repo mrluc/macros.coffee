@@ -59,7 +59,7 @@ tests =
 
   backquote: ->
     t "mac tbq (n)-> backquote {a:1}, quote -> x = y[a]"
-    # TODO: support 'x = y.a' ... backquote analog to issue of .macros
+    # TODO: support 'x = y.a' ... similar to issue of .macros, probably distinct
     t "tbq()"
     t "mac loop_bq (n)-> backquote {a:'OOO', i:'ZZZ'}, Q -> a for a, i in [1,2,3,4]"
     t "loop_bq()"

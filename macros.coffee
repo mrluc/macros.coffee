@@ -3,7 +3,7 @@
 [ fs, path, CS, _ ] = (require(s) for s in ['fs','path', 'coffee-script', './examples/underscore'])
 
 # Implementation
-exports.MacroScript = class MacroScript
+class MacroScript
   # First, some supporting functions:
   #
   # `gensym` is used to generate unique names for variables in generated code.
