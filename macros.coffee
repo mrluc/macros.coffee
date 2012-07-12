@@ -46,7 +46,7 @@ class MacroScript
     val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
     nodewalk ns, (n,set)->
       set val2node(vs[s]) if (s=get_name(n)) and vs[s]?
-      n.name.value = vs[ss]          if n.source? and (ss=n.name?.value)  and vs[ss]
+      n.name.value = vs[ss]          if (ss=n.name?.value)  and vs[ss] #no .source allows .vars
       n.index.value = vs[ss]         if n.source? and (ss=n.index?.value) and vs[ss]
 
   node_name = (n)-> n?.variable?.base?.value
@@ -94,7 +94,6 @@ class MacroScript
       for name, {nodes, compiled} of @macros when not compiled
         if @calls_only_compiled nodes
           js = @compile_lint @macroexpand nodes
-          console.log js
           @macros[name].compiled = eval "(#{js})"
 
   # Once the macros are all compiled, the logic
@@ -142,7 +141,7 @@ require.extensions['.coffee'] = (module, fname) ->
 if module.filename is process.mainModule.filename and (args = process?.argv).length > 2
   names = args[2..args.length]
   ms    = new MacroScript
-  for src in namesn
+  for src in names
     p src
     fs.readFile src, "utf-8", (err, code) ->
       throw err if err

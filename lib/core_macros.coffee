@@ -15,7 +15,7 @@ mac Q (n, parent, Macros) ->
 
 # TODO: BUG WITH HASH LITERALS. Currently they can't be used in quotes.
 #   REASON:
-#     Comes down to the implementation rf deepcopoy in CoffeeScript. CS uses instanceof
+#     Comes down to my implementation of deepcopoy. CS uses instanceof
 #     a lot in conditionals about nodes, which creates problems mentioned in detail below.
 #     only 'real' solution is a 'real' deep copy, one that instantiates the correct types
 #     and probably needs to know how to call constructors and such for dif node types.
@@ -24,42 +24,7 @@ mac Q (n, parent, Macros) ->
 #
 #   TO REPRODUCE:
 #   # eval(ms.instance.compile 'quote -> {a:2}').compile(bare:on)
-#
-  # Going Inside:
-      # m = {instance} = require './macros'
-      # require './lib/core_macros.coffee'
-      # m.compile 'quote -> a:1'
-      #
-      # > '\ndeepcopy(global.quotes[\'_g3\']);\n'
-      #
-      # o = global.quotes._g3
-      # d = deepcopy o
-      # d.compile()
-      #
-      # > '(function() {\n\n  ({\n    a: 1: a: 1\n  });\n\n}).call(this);\n'
-      #
-      # dv = d.unwrap() # gets first expression, I believe, or from within parens.
-      # db = dv.base    # Obj constructor, db.compileNode is problem...
-      # db.compileNode.toString()
-      #
-      # it creates Assign objects, whose .compile produces the "k:v" strings.
-      #
-      # Assign is passed prop, prop, 'object' in each case, so read the code to see...
-      # aha.
-      # Yeah, it's instanceof. There are two paths that ought to be exclusive but aren't
-      # if a node isn't instanceof.
-mac BQ (n) ->
-  # note to self ... okay, we were going to write a 'prettier' backquote as
-  # a macro (remember, it's a function now), but were hampered by the use of
-  # object literals in the calls. Well ... TODO, but some thoughts ...
-  # The syntax we want, if we're providing a shorter syntax here, is to allow
-  #[vars,rest] = n.args
-  # weird. a:2 becomes a: 2: a: 2 in the ensuing js ... how?!?
-  quote ->
-    args = {}
-    args.a = 2; args.b = 3
-    backquote args, quote ->
-      x=a
+    # The exact object involved is the Assign object.
 
 # 'Current Callback'
 #  TODO: UPDATE FOR CURRENT VERSION OF m.c
