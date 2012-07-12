@@ -82,18 +82,23 @@ test 'short BQ macro', (m)->
     p result.compile()
     result
   mac shortbq (n)->
-    # We want to see this:
-    # args def for $a and $b as $a: a, etc
-    #  This is getting BUILT
-    # backquote using that body, with those args ...
     a = 2
     b = 3
-    result = bq -> $a + $b
+    result = bq -> $a + $b # we actually want this to use gensyms
+    # ie
+    #   g_args = {}
+    #   g_args.g_12 = a
+    #   backquote g_args, Q -> g_012_a + ...
+    # But we're truly limited by backquote, since we need both THING.OTHERTHING to
+    # be replaced
     p "so close"
     p result.compile(bare:on) # aha, this is still 'return 2+3' -- why RETURN?
+    # ah -- it was previously turned into a return being the last statement.
+    # that's a pita, I suppose; with a closure wrapper there'd be no problem ...
+    # if a node is a Return, you could just set it with its .expression, right?
     result
   # actually, this might just be a consequence of our hacking the 'body' section
   # out of the input ... although I think that's what we do for the quote macro too (yes),
   # so ... stumped again.
 
-  p m.compile "x = shortbq()"
+  p m.compile "x = 1; shortbq(); x=2"
