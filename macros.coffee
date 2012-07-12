@@ -136,15 +136,17 @@ require.extensions['.coffee'] = (module, fname) ->
 # CoffeeScript doesn't ship with an easy way to hook its command-line
 # compilation, this implementation takes the easy way out and doesn't
 # support specifying an output directory; the compiled javascript is
-# always written into the same location as the coffeescript.
-if process? && (args = process?.argv).length > 2 and ns = args[2..args.length]
-  console.log "called from command line"
-  MS = new exports.MacroScript
-  for src in ns
+# always written into the same location as the coffeescript. TODO:
+# bloops, the command-line check needs to see if the first argument
+# is 'our' name.
+if module.filename is process.mainModule.filename and (args = process?.argv).length > 2
+  names = args[2..args.length]
+  ms    = new MacroScript
+  for src in namesn
     p src
     fs.readFile src, "utf-8", (err, code) ->
-      Throw err if err
+      throw err if err
       name = path.basename src, path.extname(src)
       dir  = path.join(path.dirname(src), "#{name}.js")
-      out  = MS.compile code
+      out  = ms.compile code
       fs.writeFile dir, out, (err)-> if err then throw err else p "Success!"
