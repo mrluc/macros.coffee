@@ -48,7 +48,7 @@ test 'deeply nested macros expand in the right order', ->
     zzx()     # TODO: aha, lines ending with ;; instead of ;. What's ast look like?
     ok aaa is 4
 
-test 'short BQ macro', (m)->
+test 'in-progress: BQ as a macro, with some implicit sugar', (m)->
 
   # what does it take to recognize and replace a thing.THISPLACE?
   ns = quote -> thing.x
@@ -81,7 +81,7 @@ test 'short BQ macro', (m)->
       backquote(args, quote -> nodes)
     p result.compile()
     result
-  mac shortbq (n)->
+  mac test_short_bq (n)->
     a = 2
     b = 3
     result = bq -> $a + $b # we actually want this to use gensyms
@@ -101,4 +101,4 @@ test 'short BQ macro', (m)->
   # out of the input ... although I think that's what we do for the quote macro too (yes),
   # so ... stumped again.
 
-  p m.compile "x = 1; shortbq(); x=2"
+  p m.compile "x = 1; test_short_bq(); x=2"

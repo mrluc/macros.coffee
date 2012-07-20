@@ -41,6 +41,7 @@ class MacroScript
   # `backquote` takes a hash of values and a tree of nodes. For instance,
   # `backquote (a:2), quote -> 2 + a` would produce `2 + 2`. Its definition
   # must be special-cased to recognize names in language features like comprehensions.
+  # TODO:
   backquote = (vs,ns) ->
     get_name = (n)-> node_name(n) ? n.base?.value
     val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
@@ -138,14 +139,12 @@ require.extensions['.coffee'] = (module, fname) ->
 # always written into the same location as the coffeescript. TODO:
 # bloops, the command-line check needs to see if the first argument
 # is 'our' name.
-if module.filename is process.mainModule.filename and (args = process?.argv).length > 2
-  names = args[2..args.length]
-  ms    = new MacroScript
+if module.filename is process.mainModule.filename and names = process?.argv.slice(2)
   for src in names
     p src
     fs.readFile src, "utf-8", (err, code) ->
       throw err if err
       name = path.basename src, path.extname(src)
       dir  = path.join(path.dirname(src), "#{name}.js")
-      out  = ms.compile code
+      out  = instance.compile code
       fs.writeFile dir, out, (err)-> if err then throw err else p "Success!"
