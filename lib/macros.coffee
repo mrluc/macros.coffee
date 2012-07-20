@@ -1,6 +1,6 @@
 
 [G_COUNT, p, root]  = [0, console.log, window ? global]
-[ fs, path, CS, _ ] = (require(s) for s in ['fs','path', 'coffee-script', './examples/underscore'])
+[ fs, path, CS, _ ] = (require(s) for s in ['fs','path', 'coffee-script', 'underscore'])
 
 # Implementation
 class MacroScript
@@ -141,10 +141,9 @@ require.extensions['.coffee'] = (module, fname) ->
 # is 'our' name.
 if module.filename is process.mainModule.filename and names = process?.argv.slice(2)
   for src in names
-    p src
-    fs.readFile src, "utf-8", (err, code) ->
+    p src fs.readFile src, "utf-8", (err, code) ->
       throw err if err
-      name = path.basename src, path.extname(src)
+      name = path.basename(src, path.extname(src))
       dir  = path.join(path.dirname(src), "#{name}.js")
       out  = instance.compile code
       fs.writeFile dir, out, (err)-> if err then throw err else p "Success!"

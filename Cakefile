@@ -1,8 +1,8 @@
 fs = require 'fs'
 path = require 'path'
 #cs = require 'coffee-script'
-ms = require('./macros').instance
-require "./lib/core_macros.coffee"
+ms = require('./lib/macros').instance
+require "./lib/core_macros"
 
 # ANSI Terminal Colors.
 enableColors = no
