@@ -127,9 +127,9 @@ class MacroScript
 # or you can expand+compile files to Javascript and run that.
 
 # Simply `require 'module_using_macros'` should work,
-exports.instance = instance = new MacroScript
+exports[k]=v for k,v of new MacroScript
 require.extensions['.coffee'] = (module, fname) ->
-  module._compile instance.compile(fs.readFileSync(fname, 'utf-8')), fname
+  module._compile exports.compile(fs.readFileSync(fname, 'utf-8')), fname
 
 # but be aware that command-line compiling is limited; the order
 # that files containing macros are compiled in will matter. And, since
@@ -145,5 +145,5 @@ if module.filename is process.mainModule.filename and names = process?.argv.slic
       throw err if err
       name = path.basename(src, path.extname(src))
       dir  = path.join(path.dirname(src), "#{name}.js")
-      out  = instance.compile code
+      out  = exports.compile code
       fs.writeFile dir, out, (err)-> if err then throw err else p "Success!"
