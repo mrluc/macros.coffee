@@ -104,11 +104,7 @@ test 'in-progress: BQ as a macro, with some implicit sugar', (m)->
     p "so close"
     p result.compile(bare:on) # aha, this is still 'return 2+3' -- why RETURN?
     # ah -- it was previously turned into a return being the last statement.
-    # that's a pita, I suppose; with a closure wrapper there'd be no problem ...
-    # if a node is a Return, you could just set it with its .expression, right?
     result
-  # actually, this might just be a consequence of our hacking the 'body' section
-  # out of the input ... although I think that's what we do for the quote macro too (yes),
-  # so ... stumped again.
 
+  # TODO: kill this. Know that it's in git.
   p m.compile "x = 1; test_short_bq(); x=2"
