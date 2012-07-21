@@ -1,61 +1,76 @@
-
+# **macros.coffee** is a stupid-simple implementation of Lisp-style macros for
+# CoffeeScript in 100 lines.
+#
+# If you install macros.coffee, CoffeeScript will work normally, but it will
+# understand macro definitions of the form
+#
+#    mac foo (ast) -> transformed_ast
+#
+# ... and will automatically *macroexpand* them in coffeescript.
 [G_COUNT, p, root]  = [0, console.log, window ? global]
 [ fs, path, CS, _ ] = (require(s) for s in ['fs','path', 'coffee-script', 'underscore'])
 
-# Implementation
+#### Utility Functions
+# `gensym` gives names to variables in generated code.
+#
+# `nodewalk` walks the nodes of the tree returned by `CoffeeScript.nodes`.
+# Our visitor callback is handed a 'setter' function that can be used to
+# set the value of the current node; for instance,
+# `nodewalk CoffeeScript.nodes(codestring), (n,set)-> set CoffeeScript.nodes "2"`
+# uses the setter function to replace the first node encountered with the number 2.
+
+gensym = (s='')-> "#{s}_g#{++G_COUNT}"
+
+nodewalk = (n, visit, dad = undefined) ->
+  return unless n.children
+  dad = n if n.expressions
+  for name in n.children
+    return unless kid = n[name]
+    if kid instanceof Array then while kid.length > ((++i if i?) ? i=0)
+      visit kid[i], ((node) -> kid[i] = node), dad
+      nodewalk kid[i], visit, dad
+    else
+      visit kid, ((node)-> kid = n[name] = node), dad
+      nodewalk kid, visit, dad
+  n
+
+isNode = (o)-> o.isStatement? or o.compile?
+isValue = (o)->
+  for k in 'Number String Boolean RegExp Date Function'.split(' ')
+    return yes if _["is#{k}"](o)
+  no
+
+# `deepcopy` of the AST; this implementation doesn't attempt to
+# respect `instanceof` and it really should; see the TODO.
+deepcopy = (o)->
+  for k,v of o2 = _.clone o
+    if _.isArray(v) or (typeof(v)=='object' && !isValue(o) && _.keys(o).length > 0)
+      o2[k] = deepcopy v
+  o2
+
+# `backquote` takes a hash of values and a tree of nodes. For instance,
+# `backquote (a:2), quote -> 2 + a` would produce `2 + 2`. Its definition
+# must be special-cased to recognize names in language features like comprehensions.
+# TODO:
+backquote = (vs,ns) ->
+  get_name = (n)-> node_name(n) ? n.base?.value
+  val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
+  nodewalk ns, (n,set)->
+    set val2node(vs[s]) if (s=get_name(n)) and vs[s]?
+    n.name.value = vs[ss]          if (ss=n.name?.value)  and vs[ss] #no .source allows .vars
+    n.index.value = vs[ss]         if n.source? and (ss=n.index?.value) and vs[ss]
+
+uses_macros = (ns)-> nodewalk ns, (n)-> return yes if n.base?.value is "'use macros'"
+node_name = (n)-> n?.variable?.base?.value
+
+#### Instance Methods
+
+# Our MacroScript instance provides the same API as the CoffeeScript require.
+# `eval`, `compile`, and `nodes` work about the same.
 class MacroScript
-  # First, some supporting functions:
-  #
-  # `gensym` is used to generate unique names for variables in generated code.
-  gensym = (s='')-> "#{s}_g#{++G_COUNT}"
-  # `nodewalk` walks the nodes of the tree returned by `CoffeeScript.nodes`.
-  # Our visitor callback is handed a 'setter' function that can be used to
-  # set the value of the current node; for instance,
-  # `nodewalk CoffeeScript.nodes(codestring), (n,set)-> set CoffeeScript.nodes "2"`
-  # uses the setter function to replace the first node encountered with the number 2.
-  nodewalk = (n, visit, dad = undefined) ->
-    return unless n.children
-    dad = n if n.expressions
-    for name in n.children
-      return unless kid = n[name]
-      if kid instanceof Array then while kid.length > ((++i if i?) ? i=0)
-        visit kid[i], ((node) -> kid[i] = node), dad
-        nodewalk kid[i], visit, dad
-      else
-        visit kid, ((node)-> kid = n[name] = node), dad
-        nodewalk kid, visit, dad
-    n
 
-  isNode = (o)-> o.isStatement? or o.compile?
-  isValue = (o)->
-    for k in 'Number String Boolean RegExp Date Function'.split(' ')
-      return yes if _["is#{k}"](o)
-    no
-
-  deepcopy = (o)->
-    for k,v of o2 = _.clone o
-      if _.isArray(v) or (typeof(v)=='object' && !isValue(o) && _.keys(o).length > 0)
-        o2[k] = deepcopy v
-    o2
-
-  # `backquote` takes a hash of values and a tree of nodes. For instance,
-  # `backquote (a:2), quote -> 2 + a` would produce `2 + 2`. Its definition
-  # must be special-cased to recognize names in language features like comprehensions.
-  # TODO:
-  backquote = (vs,ns) ->
-    get_name = (n)-> node_name(n) ? n.base?.value
-    val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
-    nodewalk ns, (n,set)->
-      set val2node(vs[s]) if (s=get_name(n)) and vs[s]?
-      n.name.value = vs[ss]          if (ss=n.name?.value)  and vs[ss] #no .source allows .vars
-      n.index.value = vs[ss]         if n.source? and (ss=n.index?.value) and vs[ss]
-
-  node_name = (n)-> n?.variable?.base?.value
-
-  # By default, macro definitions look like a 'mac' function call.
   constructor: (@macros={}, @types=[name:'mac', recognize: node_name])->
-  # `eval`, `compile`, and `nodes` work about the same as the CoffeeScript
-  # versions.
+
   eval: (s) => eval @compile s
 
   compile: (s,opts=bare:on)=>
@@ -72,13 +87,13 @@ class MacroScript
     @macroexpand() until @all_expanded()
     @ast
 
-  # Macro definitions are expected to have the form
-  # `macroSignifier(nameOfMacro(definitionOfMacro))`.
-  # Upon recognizing a macro as defined in `@types`,
-  # add a new definition to `@macros` under the name recognized
-  # from its first argument, containing the uncompiled nodes from
-  # the macro definition, and a function to recognize occurrences
-  # of calls to that macro. Replace the macro definition with a comment.
+  # `find_and_compile_macros` is the most important method. It does what it says.
+  # By default, it can recognize names of function calls that looks like this:
+  # `mac foo (n)-> n`; that is to say,
+  # `macroSignifier( nameOfMacro( definitionOfMacroAsFunction) )`.
+  # We store the nodes of that macro, and a function to recognize it,
+  # under the name recognized from its first argument.
+  # Replace the macro definition with a comment.
   find_and_compile_macros: =>
     nodewalk @ast, (n,set) =>
       for {name, recognize} in @types when name is recognize n
@@ -88,9 +103,8 @@ class MacroScript
           recognize: (n)->  name if name is recognize n
           compiled: undefined
         set CS.nodes "`//#{name} defined`"
-    # Macros have to be compiled in the right order, because they
-    # may themselves call other macros.
-    # todo: see about binding these in a better context than global :P
+    # The macros are **compiled**, taking care to do it in the right
+    # order, since they might rely on other macros.
     until @all_compiled()
       for name, {nodes, compiled} of @macros when not compiled
         if @calls_only_compiled nodes
