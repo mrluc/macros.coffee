@@ -1,7 +1,6 @@
-fs = require 'fs'
-path = require 'path'
-#cs = require 'coffee-script'
-ms = require './lib/macros'
+[fs,path,{exec},ms] = (require s for s in 'fs path child_process ./lib/macros'.split ' ')
+
+'use macros';
 require "./lib/core_macros"
 
 # ANSI Terminal Colors.
@@ -21,9 +20,25 @@ log = (message, color, explanation) ->
   console.log color + message + reset + ' ' + (explanation or '')
 p = console.log
 
+w_cwd = (dir, fn, dbg=no) ->
+  old_cwd = process.cwd()
+  p "OLD: #{process.cwd()}" if dbg
+  process.chdir dir
+  p "NEW: #{process.cwd()}" if dbg
+  fn()
+  p "NOW: #{process.cwd()}" if dbg
+  process.chdir old_cwd
+
+task 't1','test current working directory fn',->
+  p process.cwd()
+  w_cwd 'test', ->
+    p process.cwd()
+  p process.cwd()
+
 runTests = ->
   passed = 0
   failures = []
+  dir = 'test'
 
   global[name] = func for name, func of require 'assert'
 
@@ -56,15 +71,31 @@ runTests = ->
       console.log "  #{error.source}" if error.source
     return
 
-  files = fs.readdirSync 'test'
+  files = fs.readdirSync dir
   for file in files when file.match /\.coffee$/i
-    currentFile = filename = path.join 'test', file
+    currentFile = filename = path.join dir, file
     code = fs.readFileSync filename
     try
-      ms.eval code.toString(), {filename}
+      w_cwd dir, ->
+        ms.eval code.toString(), {filename}
     catch error
       failures.push {filename, error}
   return !failures.length
 
 task 'test', 'running macros.coffee tests', ->
   runTests()
+
+task 'docs', 'generate docco docs (requires docco) ... docco.', ->
+  exec 'docco lib/macros.coffee lib/core_macros.coffee'
+
+task 'loc', '(painfully slowly) counting lines of code in macros.coffee', ->
+  code = fs.readFileSync './lib/macros.coffee'
+  code = code.toString()
+  lines = code.split '\n'
+  num_lines = lines.length
+  lines = (line.trim() for line in lines)
+  count = 0
+  comments = (line for line in lines when line.length is 0 or line[0] is '#')
+  num_comments = comments.length
+  # console.log comment for comment in comments       # to double-check logic...
+  console.log num_lines - num_comments

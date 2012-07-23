@@ -2,6 +2,8 @@
 # and macro-defining macros, which ideally would be just another
 # application of quote.
 
+'use macros'
+
 cs = require 'coffee-script'
 p = console.log
 compile = (o)-> o.compile bare:on if o.compile?
@@ -16,8 +18,6 @@ test 'the macroscript object is present and works', (ms, fn)->
   ok ms.compile "mac info (n, p, m) -> console.log m; CS.nodes '2'"
 
 test 'requiring quote macro works', (ms)->
-  p process.cwd()
-  require './core_macros.coffee' # hmmm, no. That's too late for
   ok q = ms.eval 'quote -> 2+2'
   ok compile(q) is cs.compile('2+2', bare:on)
 
@@ -44,23 +44,21 @@ test 'dot-backquotes: backquote works for the `y` in `x.y`', (ms)->
   ok bqworks() is x.z
 
 test 'russian dolls: deeply nested macros expand in the right order', ->
-    # if macroexpansion happens out of order this will be expanded < 4x, or not at all
-    aaa = 0
-    mac zzz (n,p,m)->
-      @n ?= 0
-      @n++
-      global.aaa = @n
-      backquote {n: @n}, Q -> aaa = n
+  # right: 4 macro expansions. Out of order: < 4 expansions.
+  aaa = 0
+  mac zzz (n,p,m)->
+    @n ?= 0
+    @n++
+    global.aaa = @n
+    backquote {n: @n}, Q -> aaa = n
 
-    mac zzy (n)-> Q -> zzz(); zzz()
-    mac zzx (n)-> Q -> zzy(); zzy()
-    zzx()     # TODO: aha, lines ending with ;; instead of ;. What's ast look like?
-    ok aaa is 4
+  mac zzy (n)-> Q -> zzz(); zzz()
+  mac zzx (n)-> Q -> zzy(); zzy()
+  zzx()     # TODO: ;; instead of ;. What's ast look like?
+  ok aaa is 4
 
 test 'macro_defining_macros', (ms) ->
-    # TODO: mac-generating-macros error out because of .length of undefined
-    # in Code.paramNames, referencing Param.names loop of name.objects.
-    # ... I don't have time to track that down, so ...
+    # Yay. Deepcopy: quote -> (param)-> fails. Params are broke.
     ms.eval """
       mac make_fub (n) ->
         quote ->

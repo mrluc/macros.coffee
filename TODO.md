@@ -41,6 +41,9 @@ them:
   in macros.coffee, but precedence is undefined, for instance, 
   and it hasn't even been tested once yet.
 
+- Honestly, it's all deep copy. Macro-defining macs, backquote,
+  old macros that don't work now ... gotta branch and fix.
+
 - **Macro-defining-macros**, at any rate straightforward ones that
   emulate Lisp directly,
   are broken, probably because of deepcopy reasons. In theory,

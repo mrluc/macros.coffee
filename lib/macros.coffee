@@ -4,7 +4,7 @@
 # If you install macros.coffee, CoffeeScript will work normally, but it will
 # understand macro definitions of the form
 #
-#    mac foo (ast) -> transformed_ast
+#     mac foo (ast) -> transformed_ast
 #
 # ... and will automatically *macroexpand* them in coffeescript.
 [G_COUNT, p, root]  = [0, console.log, window ? global]
@@ -52,7 +52,7 @@ deepcopy = (o)->
 # `backquote (a:2), quote -> 2 + a` would produce `2 + 2`. Its definition
 # must be special-cased to recognize names in language features like comprehensions.
 # TODO:
-backquote = (vs,ns) ->
+backquote = bq = (vs,ns) ->
   get_name = (n)-> node_name(n) ? n.base?.value
   val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
   nodewalk ns, (n,set)->
@@ -60,31 +60,32 @@ backquote = (vs,ns) ->
     n.name.value = vs[ss]          if (ss=n.name?.value)  and vs[ss] #no .source allows .vars
     n.index.value = vs[ss]         if n.source? and (ss=n.index?.value) and vs[ss]
 
-uses_macros = (ns)-> nodewalk ns, (n)-> return yes if n.base?.value is "'use macros'"
+uses_macros = (ns)-> r=no; nodewalk(ns,(n)-> r=yes if n.base?.value is "'use macros'"); r
 node_name = (n)-> n?.variable?.base?.value
 
 #### Instance Methods
 
 # Our MacroScript instance provides the same API as the CoffeeScript require.
 # `eval`, `compile`, and `nodes` work about the same.
-class MacroScript
+exports.MacroScript = class MacroScript
 
-  constructor: (@macros={}, @types=[name:'mac', recognize: node_name])->
+  constructor:(@macros={},@types=[name:'mac',recognize:node_name],@strict=no,@opts=bare:on)->
 
-  eval: (s) => eval @compile s
+  eval: (s,strict=@strict) => eval @compile s,@opts,strict
 
-  compile: (s,opts=bare:on)=>
-    @nodes s if s
+  compile: (s,opts=@opts, strict=@strict)=>
+    @nodes (s ? ''), strict
     @compile_lint @ast, opts
 
-  compile_lint: (n,opts=bare:on)-> n.compile(opts).replace(/undefined/g,"")
+  compile_lint: (n,opts=@opts)-> n.compile(opts).replace(/undefined/g,"")
   # `nodes` is a high-level description of the implementation:
   # We get the AST from CoffeeScript, find and compile any macro definitions
   # it may contain, and then expand any calls to those macros that may exist.
-  nodes: (str)=>
+  nodes: (str, strict=@strict)=>
     @ast = CS.nodes str
-    @find_and_compile_macros()
-    @macroexpand() until @all_expanded()
+    if !strict or uses_macros(@ast)
+      @find_and_compile_macros()
+      @macroexpand() until @all_expanded()
     @ast
 
   # `find_and_compile_macros` is the most important method. It does what it says.
@@ -143,7 +144,7 @@ class MacroScript
 # Simply `require 'module_using_macros'` should work,
 exports[k]=v for k,v of new MacroScript
 require.extensions['.coffee'] = (module, fname) ->
-  module._compile exports.compile(fs.readFileSync(fname, 'utf-8')), fname
+  module._compile exports.compile(fs.readFileSync(fname, 'utf-8'),exports.opts, yes), fname
 
 # but be aware that command-line compiling is limited; the order
 # that files containing macros are compiled in will matter. And, since
