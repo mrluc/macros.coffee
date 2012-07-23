@@ -8,7 +8,7 @@
 #
 # ... and will automatically *macroexpand* them in coffeescript.
 [G_COUNT, p, root]  = [0, console.log, window ? global]
-[ fs, path, CS, _ ] = (require(s) for s in ['fs','path', 'coffee-script', 'underscore'])
+[ fs, path, CS, _, dc ] = (require(s) for s in 'fs path coffee-script underscore owl-deepcopy'.split(' '))
 
 #### Utility Functions
 # `gensym` gives names to variables in generated code.
@@ -40,13 +40,8 @@ isValue = (o)->
     return yes if _["is#{k}"](o)
   no
 
-# `deepcopy` of the AST; this implementation doesn't attempt to
-# respect `instanceof` and it really should; see the TODO.
-deepcopy = (o)->
-  for k,v of o2 = _.clone o
-    if _.isArray(v) or (typeof(v)=='object' && !isValue(o) && _.keys(o).length > 0)
-      o2[k] = deepcopy v
-  o2
+# `deepcopy` of the AST using OWL's wonderful deep copy implementation
+deepcopy = dc.deepCopy
 
 # `backquote` takes a hash of values and a tree of nodes. For instance,
 # `backquote (a:2), quote -> 2 + a` would produce `2 + 2`. Its definition
