@@ -6,7 +6,8 @@
 #
 #     mac foo (ast) -> transformed_ast
 #
-# ... and will automatically *macroexpand* them in coffeescript.
+# ... and will automatically *macroexpand* them in coffeescript files that
+# contain the declaration `"use macros"`.
 [G_COUNT, p, root]  = [0, console.log, window ? global]
 [ fs, path, CS, _, dc ] = (require(s) for s in 'fs path coffee-script underscore owl-deepcopy'.split(' '))
 
@@ -46,7 +47,7 @@ deepcopy = dc.deepCopy
 # `backquote` takes a hash of values and a tree of nodes. For instance,
 # `backquote (a:2), quote -> 2 + a` would produce `2 + 2`. Its definition
 # must be special-cased to recognize names in language features like comprehensions.
-# TODO:
+# TODO: tests to see what language features are still not replaceable.
 backquote = bq = (vs,ns) ->
   get_name = (n)-> node_name(n) ? n.base?.value
   val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
@@ -64,7 +65,8 @@ node_name = (n)-> n?.variable?.base?.value
 # `eval`, `compile`, and `nodes` work about the same.
 exports.MacroScript = class MacroScript
 
-  constructor:(@macros={},@types=[name:'mac',recognize:node_name],@strict=no,@opts=bare:on)->
+  constructor:(s='',@macros={},@types=[name:'mac',recognize:node_name],@strict=no,@opts=bare:on)->
+    @nodes s
 
   eval: (s,strict=@strict) => eval @compile s,@opts,strict
 
@@ -83,7 +85,9 @@ exports.MacroScript = class MacroScript
       @macroexpand() until @all_expanded()
     @ast
 
-  # `find_and_compile_macros` is the most important method. It does what it says.
+  # `find_and_compile_macros` expands and compiles macro definitions, and
+  # calls from within those definitions. (It doesn't touch anything outside
+  # of macro _definitions_, however).
   # By default, it can recognize names of function calls that looks like this:
   # `mac foo (n)-> n`; that is to say,
   # `macroSignifier( nameOfMacro( definitionOfMacroAsFunction) )`.
@@ -91,6 +95,7 @@ exports.MacroScript = class MacroScript
   # under the name recognized from its first argument.
   # Replace the macro definition with a comment.
   find_and_compile_macros: =>
+
     nodewalk @ast, (n,set) =>
       for {name, recognize} in @types when name is recognize n
         name = recognize n.args[0]
@@ -99,7 +104,8 @@ exports.MacroScript = class MacroScript
           recognize: (n)->  name if name is recognize n
           compiled: undefined
         set CS.nodes "`//#{name} defined`"
-    # The macros are **compiled**, taking care to do it in the right
+
+    # The macro definitions are **compiled**, taking care to do it in the right
     # order, since they might rely on other macros.
     until @all_compiled()
       for name, {nodes, compiled} of @macros when not compiled
@@ -137,7 +143,7 @@ exports.MacroScript = class MacroScript
 # or you can expand+compile files to Javascript and run that.
 
 # Simply `require 'module_using_macros'` should work,
-exports[k]=v for k,v of new MacroScript
+exports[k]=v for k,v of new MacroScript fs.readFileSync("#{__dirname}/core_macros.coffee",'utf-8')
 require.extensions['.coffee'] = (module, fname) ->
   module._compile exports.compile(fs.readFileSync(fname, 'utf-8'),exports.opts, yes), fname
 
