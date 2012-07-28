@@ -1,7 +1,7 @@
 macros.coffee
 =============
 
-Down-and-dirty, 100-line implementation of Lisp-style macros for CoffeeScript.
+Down-and-dirty, 100-line (86, actually, by last count; `cake loc` shows) implementation of Lisp-style macros for CoffeeScript.
 
 You can install it like so:
 
@@ -14,9 +14,14 @@ And then require() it before requiring any file(s) that use macros:
 
     app.start()
 
-Or, to compile to javascript files from the command line:
+Or, to compile to javascript files from the command line (currently very flaky):
 
     $ macros.coffee app/*.coffee
+
+## Examples
+
+Some examples can be seen in the `/test` directory. Use of `quote`, `backquote`,
+macro-defining-macros, call-with-current-callback (`cc()`) ...
 
 ## Writing Macros
 
@@ -55,3 +60,4 @@ Here's a useless example that assigns x, y, and z to a value:
 
     assign_xyz 12
 
+(I wrote this because no one else has. If you want to fork it and make it better, or build a substantially more 'real' implementation, I'll probably use yours without a qualm.)
