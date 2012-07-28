@@ -1,0 +1,13 @@
+{
+  "name":            "macros.coffee",
+  "description":     "Down-and-dirty, 100-line Lisp-style macros in CoffeeScript",
+  "keywords":        ["macros","dsl","coffee","compiler"],
+  "author":          "Luc Fueston <superluc@gmail.com>",
+  "version":         "0.0.1",
+  "repository":      "git://github.com/mrluc/macros.coffee",
+  "main":            "./lib/macros",
+  "engines":         {"node":">=0.4.0"}, 
+  "dependencies":    {"coffee-script": "~1.3.1", "underscore":"*", "owl-deepcopy":"~0.0.1"},
+  "devDependencies": {"docco": "~0.3.0"}
+}
+
