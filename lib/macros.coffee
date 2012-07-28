@@ -1,5 +1,16 @@
-# **macros.coffee** is a stupid-simple implementation of Lisp-style macros for
-# CoffeeScript in 100 lines.
+# **macros.coffee** is Lisp-style macros for CoffeeScript in 100 lines.
+#
+# ### Why CoffeeScript?
+#
+# 1. CoffeeScript is a tiny language that only compiles down to Javascript,
+#    so its AST is pretty easy to work with.
+#
+# 2. Plus, CoffeeScript has a really flexible syntax, which you need for
+#    macros to look like anything.
+#
+# 3. Too, Javascript's metaprogramming is largely limited to tricks with
+#    `this`, so the control over the meaning of language features offered
+#    by macros is correspondingly more attractive.
 #
 # If you install macros.coffee, CoffeeScript will work normally, but it will
 # understand macro definitions of the form
@@ -7,11 +18,17 @@
 #     mac foo (ast) -> transformed_ast
 #
 # ... and will automatically *macroexpand* them in coffeescript files that
-# contain the declaration `"use macros"`.
+# contain the declaration `"use macros"`. See the docs for `core_macros.coffee`,
+# or the contents of the test directory, for examples of files that
+# use this declaration.
+#
+# The [github project](https://github.com/mrluc/macros.coffee) contains more information,
+# as [my blog](http://mrluc.github.com) might from time to time.
+
+#### Utility Functions
 [G_COUNT, p, root]  = [0, console.log, window ? global]
 [ fs, path, CS, _, dc ] = (require(s) for s in 'fs path coffee-script underscore owl-deepcopy'.split(' '))
 
-#### Utility Functions
 # `gensym` gives names to variables in generated code.
 #
 # `nodewalk` walks the nodes of the tree returned by `CoffeeScript.nodes`.
@@ -152,9 +169,7 @@ require.extensions['.coffee'] = (module, fname) ->
 # CoffeeScript doesn't ship with an easy way to hook its command-line
 # compilation, this implementation takes the easy way out and doesn't
 # support specifying an output directory; the compiled javascript is
-# always written into the same location as the coffeescript. TODO:
-# bloops, the command-line check needs to see if the first argument
-# is 'our' name.
+# always written into the same location as the coffeescript.
 if module.filename is process.mainModule.filename and names = process?.argv.slice(2)
   for src in names
     p src fs.readFile src, "utf-8", (err, code) ->

@@ -1,8 +1,15 @@
-# Quote -- use like: ast = quote -> code you want the AST of.
+# macro declaration.
+# In the future, we will obviously want macro namespacing.
+# Any problems with old-timey namespacing? Like
+#
+# `"in macros.namespace"` and `"use macros.namespace"` as a nod to CL?
+'use macros'
+
+# Quote -- use like:
+#
+#     ast = quote -> code you want the AST of.
 #
 # Weep, lisp implementers. Where's your Cons now?!?
-'use macros';
-
 mac quote ({args: [{body}]}, p, m) ->
   key = gensym()
   (root.quotes ?= {})[key] = body
