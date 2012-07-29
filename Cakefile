@@ -45,6 +45,7 @@ runTests = ->
   global.test = (description, fn)->
     try
       fn.test = {description, currentFile}
+      p "TEST: #{currentFile}: #{description}"
       fn ms
       ++passed
     catch e

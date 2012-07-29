@@ -1,15 +1,21 @@
 Todo
 ===============
 
+Bug: run some tests; I think that macroexpansions are
+losing CoffeeScript variable scope information, because
+`var` and builtins like `__slice` aren't being generated in
+the body of the `para` macro. We should really be testing
+that quoted code is 1:1 with unquoted, a little more stringently.
+
 ### where we're at
 
 I've been down in South America ever since I presented the 
 original proof-of-concept at Ruby.mn, and I didn't do much
-with it. I did find an afternoon to refactor and cut line noise.
+with it. I did find a day to refactor and cut line noise.
 
 The refactoring broke a number of old macros, but since returning
 to the states I've been able to address some major technical 
-issues relating to the AST strategy (yay deepcopy; conversion
+issues relating to the AST strategy (yay deepcopy); conversion
 to another canonical format should hopefully not become necessary).
 
 ### priorities

@@ -76,7 +76,6 @@ deepcopy = dc.deepCopy
 # must be special-cased to recognize names in language features like comprehensions.
 # TODO: tests to see what language features are still not replaceable.
 backquote = bq = (vs,ns) ->
-  get_name = (n)-> node_name(n) ? n.base?.value
   val2node = (val)->if isNode(val) then val else CS.nodes "#{val}"
   nodewalk ns, (n,set)->
     set val2node(vs[s]) if (s=get_name(n)) and vs[s]?
@@ -84,7 +83,9 @@ backquote = bq = (vs,ns) ->
     n.index.value = vs[ss]         if n.source? and (ss=n.index?.value) and vs[ss]
 
 uses_macros = (ns)-> r=no; nodewalk(ns,(n)-> r=yes if n.base?.value is "'use macros'"); r
+
 node_name = (n)-> n?.variable?.base?.value
+get_name = (n)-> node_name(n) ? n.base?.value
 
 #### Instance Methods <a id='impl'></a>
 
