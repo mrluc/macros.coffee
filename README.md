@@ -1,7 +1,7 @@
-macros.coffee
+[macros.coffee](http://mrluc.github.com/macros.coffee/)
 =============
 
-Down-and-dirty, 100-line (86, actually, by last count; `cake loc` shows) implementation of Lisp-style macros for CoffeeScript.
+Down-and-dirty, 100-line (86, actually, by last count; `cake loc` shows) implementation of Lisp-style macros for CoffeeScript. [Annotated Source](http://mrluc.github.com/macros.coffee/docs/macros.html) 
 
 You can install it like so:
 
