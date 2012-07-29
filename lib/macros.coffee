@@ -1,4 +1,4 @@
-# **macros.coffee** is Lisp-style macros for CoffeeScript in 100 lines.
+# **macros.coffee** is Lisp-style macros for CoffeeScript in (under) 100 lines.
 #
 # Jump to:
 #
