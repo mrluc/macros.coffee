@@ -1,5 +1,11 @@
 # **macros.coffee** is Lisp-style macros for CoffeeScript in 100 lines.
 #
+# Jump to:
+#
+# - [Implementation](#impl)
+# - [Using with node: `require()`, compiling](#usage)
+# - [AST utilities](#utils)
+#
 # ### Why CoffeeScript?
 #
 # 1. CoffeeScript is a tiny language that only compiles down to Javascript,
@@ -12,7 +18,7 @@
 #    `this`, so the control over the meaning of language features offered
 #    by macros is correspondingly more attractive.
 #
-# If you install macros.coffee, CoffeeScript will work normally, but it will
+# If you `require 'macros.coffee'`, CoffeeScript will work normally, but it will
 # understand macro definitions of the form
 #
 #     mac foo (ast) -> transformed_ast
@@ -22,10 +28,14 @@
 # or the contents of the test directory, for examples of files that
 # use this declaration.
 #
+# This isn't written by a Lisp Expert(tm). I just like the experience of writing and using
+# macros; it feels natural, and I miss it outside of Lisp. I wanted to
+# see how close I could get with a minimal implementation.
+#
 # The [github project](https://github.com/mrluc/macros.coffee) contains more information,
 # as [my blog](http://mrluc.github.com) might from time to time.
 
-#### Utility Functions
+#### Utility Functions <a id='utils'></a>
 [G_COUNT, p, root]  = [0, console.log, window ? global]
 [ fs, path, CS, _, dc ] = (require(s) for s in 'fs path coffee-script underscore owl-deepcopy'.split(' '))
 
@@ -76,7 +86,7 @@ backquote = bq = (vs,ns) ->
 uses_macros = (ns)-> r=no; nodewalk(ns,(n)-> r=yes if n.base?.value is "'use macros'"); r
 node_name = (n)-> n?.variable?.base?.value
 
-#### Instance Methods
+#### Instance Methods <a id='impl'></a>
 
 # Our MacroScript instance provides the same API as the CoffeeScript require.
 # `eval`, `compile`, and `nodes` work about the same.
@@ -155,12 +165,13 @@ exports.MacroScript = class MacroScript
       does = no for name, {compiled, recognize} of @macros when !compiled and recognize n
     does
 
-## Usage
+## Usage <a id='usage'></a>
 # As with CoffeeScript, you can either require CoffeeScript files (that use macros) directly,
 # or you can expand+compile files to Javascript and run that.
 
 # Simply `require 'module_using_macros'` should work,
 exports[k]=v for k,v of new MacroScript fs.readFileSync("#{__dirname}/core_macros.coffee",'utf-8')
+
 require.extensions['.coffee'] = (module, fname) ->
   module._compile exports.compile(fs.readFileSync(fname, 'utf-8'),exports.opts, yes), fname
 
