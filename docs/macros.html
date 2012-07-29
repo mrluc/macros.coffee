@@ -43,7 +43,9 @@ as <a href="http://mrluc.github.com">my blog</a> might from time to time.</p>   
 Our visitor callback is handed a 'setter' function that can be used to
 set the value of the current node; for instance,
 <code>nodewalk CoffeeScript.nodes(codestring), (n,set)-&gt; set CoffeeScript.nodes "2"</code>
-uses the setter function to replace the first node encountered with the number 2.</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nv">gensym = </span><span class="nf">(s=&#39;&#39;)-&gt;</span> <span class="s">&quot;</span><span class="si">#{</span><span class="nx">s</span><span class="si">}</span><span class="s">_g</span><span class="si">#{</span><span class="o">++</span><span class="nx">G_COUNT</span><span class="si">}</span><span class="s">&quot;</span>
+uses the setter function to replace the first node encountered with the number 2.
+Attribution: started life as David Padbury's replacingWalk, extended to cope
+with walking a mutable tree and passing in parent node.</p>             </td>             <td class="code">               <div class="highlight"><pre><span class="nv">gensym = </span><span class="nf">(s=&#39;&#39;)-&gt;</span> <span class="s">&quot;</span><span class="si">#{</span><span class="nx">s</span><span class="si">}</span><span class="s">_g</span><span class="si">#{</span><span class="o">++</span><span class="nx">G_COUNT</span><span class="si">}</span><span class="s">&quot;</span>
 
 <span class="nv">nodewalk = </span><span class="nf">(n, visit, dad = undefined) -&gt;</span>
   <span class="k">return</span> <span class="nx">unless</span> <span class="nx">n</span><span class="p">.</span><span class="nx">children</span>
