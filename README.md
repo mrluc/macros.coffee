@@ -60,4 +60,8 @@ Here's a useless example that assigns x, y, and z to a value:
 
     assign_xyz 12
 
-(I wrote this because no one else has. If you want to fork it and make it better, or build a substantially more 'real' implementation, I'll probably use yours without a qualm.)
+## ... why???
+
+I wrote this because I really, REALLY wanted to write macros in CoffeeScript. In Ruby, the buy-in to message-passing goes deep, and you can override most of the language, but in JS/CS metaprogramming is limited to tricks on `this`.
+
+If you want to fork this and make it better, or build a substantially more 'heavy-duty' implementation, I'll probably end up using yours.
