@@ -46,6 +46,8 @@
 # set the value of the current node; for instance,
 # `nodewalk CoffeeScript.nodes(codestring), (n,set)-> set CoffeeScript.nodes "2"`
 # uses the setter function to replace the first node encountered with the number 2.
+# Attribution: started life as David Padbury's replacingWalk, extended to cope
+# with walking a mutable tree and passing in parent node.
 
 gensym = (s='')-> "#{s}_g#{++G_COUNT}"
 
