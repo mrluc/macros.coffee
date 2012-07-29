@@ -1,10 +1,9 @@
 'use macros'
 
-
-p "TESTING: Current Callback macro"
 test 'defining cc macro',(ms)->
-  # Current Callback -- from first impl; currently broken
-  # like everything else that relies on quote -> (fn_with_any_params)->
+  # Current Callback -- from first impl
+  # Recently resuscitated
+  # This code is hard to follow. Really, really hard to follow. For me anyway.
   mac cc (n,par,ms)->
 
     n_index = (node, p) -> # index of node in expressions array of parent/undefined.
