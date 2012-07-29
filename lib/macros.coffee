@@ -83,6 +83,7 @@ backquote = bq = (vs,ns) ->
     set val2node(vs[s]) if (s=get_name(n)) and vs[s]?
     n.name.value = vs[ss]          if (ss=n.name?.value)  and vs[ss] #no .source allows .vars
     n.index.value = vs[ss]         if n.source? and (ss=n.index?.value) and vs[ss]
+    n.source.value = vs[ss]          if (ss=n.source?.value)  and vs[ss] #no .source allows .vars
 
 uses_macros = (ns)-> r=no; nodewalk(ns,(n)-> r=yes if n.base?.value is "'use macros'"); r
 

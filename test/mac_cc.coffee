@@ -1,7 +1,5 @@
 'use macros'
 
-
-p "TESTING: Current Callback macro"
 test 'defining cc macro',(ms)->
   # Current Callback -- from first impl; currently broken
   # like everything else that relies on quote -> (fn_with_any_params)->
