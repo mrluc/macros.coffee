@@ -14,7 +14,7 @@ And then require() it before requiring any file(s) that use macros:
 
     app.start()
 
-Or, to compile to javascript files from the command line (currently very flaky):
+~~Or, to compile to javascript files from the command line~~ (currently broken):
 
     $ macros.coffee app/*.coffee
 
