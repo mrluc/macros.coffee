@@ -21,7 +21,12 @@ And then require() it before requiring any file(s) that use macros:
 ## Examples
 
 Some examples can be seen in the `/test` directory. Use of `quote`, `backquote`,
-macro-defining-macros, call-with-current-callback (`cc()`) ...
+macro-defining-macros, call-with-current-callback (`cc()`) ... you can run the tests
+via
+
+    $ cake test 
+
+from macros.coffee root (in `./node_modules/macros.coffee/` if you installed via npm).
 
 ## Writing Macros
 
